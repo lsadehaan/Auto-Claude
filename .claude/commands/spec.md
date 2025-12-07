@@ -180,7 +180,33 @@ Tell the user what you found:
 >
 > Is this accurate? Anything I should know about conventions or patterns you follow?"
 
-### 3A.3: Ask About the Feature
+### 3A.3: Understand Development Environment
+
+**CRITICAL**: Ask about how to run the application. This is essential for autonomous agents to test their work.
+
+Ask: **"How do I start the development environment? Walk me through all the services that need to be running."**
+
+Probe for details:
+- **"What command starts the backend?"** (e.g., `flask run`, `python manage.py runserver`, `uvicorn main:app`)
+- **"What command starts the frontend?"** (e.g., `npm run dev`, `yarn start`)
+- **"Are there background workers?"** (e.g., Celery worker, Celery Beat, Sidekiq, Bull)
+- **"What databases or external services are needed?"** (Redis, PostgreSQL, MongoDB, Elasticsearch)
+- **"Is there a docker-compose or similar to start everything?"**
+- **"What ports does each service run on?"**
+- **"Are there specific environment variables needed?"** (check for `.env.example`)
+
+Also check the codebase for startup hints:
+```bash
+# Look for common startup configuration files
+cat Makefile 2>/dev/null | head -30
+cat docker-compose.yml 2>/dev/null | head -50
+cat Procfile 2>/dev/null
+cat package.json 2>/dev/null | grep -A 20 '"scripts"'
+ls -la scripts/ 2>/dev/null
+cat .env.example 2>/dev/null
+```
+
+### 3A.4: Ask About the Feature
 
 Then ask:
 1. **"What feature do you want to build?"** (Get a clear description)
@@ -213,9 +239,18 @@ If starting fresh:
 5. **"What are the core features? (Must have for v1)"**
 6. **"Any secondary features? (Nice to have)"**
 
-### 3B.4: Constraints & Success
-7. **"Any constraints?"** (Mobile support, performance, accessibility, etc.)
-8. **"What does success look like?"**
+### 3B.4: Architecture & Services
+7. **"Will this need background workers?"** (For email sending, async processing, scheduled tasks)
+   - If yes, recommend Celery (Python), Bull/BullMQ (Node.js), Sidekiq (Ruby)
+8. **"What external services will you need?"**
+   - Database: PostgreSQL, SQLite, MongoDB?
+   - Cache/Queue: Redis, RabbitMQ?
+   - File storage: Local, S3, Cloudinary?
+   - Auth provider: Built-in, Auth0, Clerk?
+
+### 3B.5: Constraints & Success
+9. **"Any constraints?"** (Mobile support, performance, accessibility, etc.)
+10. **"What does success look like?"**
 
 ---
 
@@ -250,6 +285,61 @@ After gathering information, create the `spec.md` file:
 
 ### Additional Tools
 - [Any other tools, libraries, or services]
+
+## Development Environment
+
+### Services Required
+
+List ALL services that must be running for the application to work:
+
+| Service | Command | Port | Notes |
+|---------|---------|------|-------|
+| Backend (Flask/Django/etc) | `flask run` | 5000 | Main API server |
+| Frontend | `npm run dev` | 3000 | React/Vue/etc dev server |
+| Celery Worker | `celery -A app worker` | N/A | Background task processor |
+| Celery Beat | `celery -A app beat` | N/A | Scheduled task scheduler |
+| Redis | `redis-server` | 6379 | Required for Celery |
+| Database | `docker compose up db` | 5432 | PostgreSQL |
+
+### Startup Order
+
+1. Start external services first (Redis, PostgreSQL, etc.)
+2. Start backend server
+3. Start background workers (Celery, etc.)
+4. Start frontend dev server
+
+### Quick Start
+
+```bash
+# Terminal 1: External services
+docker compose up redis postgres
+
+# Terminal 2: Backend
+cd backend && source venv/bin/activate && flask run
+
+# Terminal 3: Celery Worker
+cd backend && source venv/bin/activate && celery -A app worker --loglevel=info
+
+# Terminal 4: Celery Beat (if needed)
+cd backend && source venv/bin/activate && celery -A app beat --loglevel=info
+
+# Terminal 5: Frontend
+cd frontend && npm run dev
+```
+
+### Environment Variables
+
+Required `.env` variables:
+- `DATABASE_URL`: PostgreSQL connection string
+- `REDIS_URL`: Redis connection string
+- `SECRET_KEY`: Application secret key
+- [Add others as needed]
+
+### Application URLs
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000
+- **API Docs** (if available): http://localhost:5000/docs
 
 ## Existing Codebase Context
 

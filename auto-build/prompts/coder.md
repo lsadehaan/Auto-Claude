@@ -46,7 +46,21 @@ Understanding both `spec.md` AND `feature_list.json` is critical. The spec tells
 
 ## STEP 2: START DEVELOPMENT ENVIRONMENT & DISCOVER URLS
 
-### 2.1: Run Setup Script
+### 2.1: Check Development Environment Section in spec.md
+
+**FIRST**, check if spec.md has a "Development Environment" section:
+
+```bash
+grep -A 50 "## Development Environment" spec.md 2>/dev/null || echo "No Development Environment section found"
+```
+
+This section (if present) tells you:
+- All services that need to be running (backend, frontend, workers, etc.)
+- The commands to start each service
+- The order to start them
+- Required ports
+
+### 2.2: Run Setup Script or Start Manually
 
 If `init.sh` exists, run it:
 
@@ -55,7 +69,39 @@ chmod +x init.sh
 ./init.sh
 ```
 
-Otherwise, start servers manually based on the project's tech stack.
+**If no init.sh exists**, check spec.md's Development Environment section and start services manually. Common patterns:
+
+**For Flask + Celery projects:**
+```bash
+# Terminal 1: Start Redis (if not running)
+redis-server &
+
+# Terminal 2: Backend
+flask run --port 5000 &
+
+# Terminal 3: Celery Worker
+celery -A app worker --loglevel=info &
+
+# Terminal 4: Celery Beat (if scheduled tasks)
+celery -A app beat --loglevel=info &
+
+# Terminal 5: Frontend
+npm run dev &
+```
+
+**For Django projects:**
+```bash
+python manage.py runserver 8000 &
+celery -A project worker -l info &
+```
+
+**For Node.js projects:**
+```bash
+npm run dev &
+# or for separate backend/frontend:
+npm run server &
+npm run client &
+```
 
 ### 2.2: CRITICAL - Find Application URLs (Before Any Browser Testing!)
 
@@ -75,10 +121,10 @@ grep -i "localhost\|port\|url\|http://" build-progress.txt
 **Step 3: If not documented, discover the ports:**
 ```bash
 # Find what's listening on common dev ports
-lsof -i :3000 -i :3001 -i :5173 -i :5174 -i :8000 -i :8080 -i :4000 2>/dev/null | grep LISTEN
+lsof -i :3000 -i :3001 -i :5173 -i :5174 -i :8000 -i :8080 -i :4000 -i :5000 -i :6379 2>/dev/null | grep LISTEN
 
 # Or check all TCP listeners
-lsof -iTCP -sTCP:LISTEN | grep -E "node|python|next|vite|npm"
+lsof -iTCP -sTCP:LISTEN | grep -E "node|python|next|vite|npm|redis|postgres|celery"
 
 # For npm/node projects, check package.json scripts
 grep -E "PORT|port|localhost" package.json
@@ -87,7 +133,35 @@ grep -E "PORT|port|localhost" package.json
 **Step 4: Check running processes for clues:**
 ```bash
 # See what dev servers are running
-ps aux | grep -E "node|vite|next|npm|python" | grep -v grep
+ps aux | grep -E "node|vite|next|npm|python|flask|django|uvicorn|celery|redis" | grep -v grep
+```
+
+**Step 5: Verify ALL required services are running:**
+
+Check spec.md's Development Environment section for required services. Common checks:
+```bash
+# Check if Celery worker is running (for async tasks)
+ps aux | grep "celery.*worker" | grep -v grep
+
+# Check if Celery beat is running (for scheduled tasks)
+ps aux | grep "celery.*beat" | grep -v grep
+
+# Check if Redis is running (often required for Celery)
+redis-cli ping 2>/dev/null || echo "Redis not responding"
+
+# Check if PostgreSQL is running
+pg_isready 2>/dev/null || echo "PostgreSQL not responding"
+```
+
+**If background workers are needed but not running:**
+```bash
+# Start Celery worker (Python)
+celery -A app worker --loglevel=info &
+
+# Start Celery beat (Python)
+celery -A app beat --loglevel=info &
+
+# Check spec.md for exact commands
 ```
 
 **Step 5: Test the URLs before proceeding:**
@@ -98,14 +172,43 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:5173 2>/dev/null || echo
 curl -s -o /dev/null -w "%{http_code}" http://localhost:8000 2>/dev/null || echo "Not on 8000"
 ```
 
-### 2.3: Document URLs for This Session
+### 2.4: Document URLs and Services for This Session
 
-Once you find the correct URLs, note them for browser automation:
+Once you find the correct URLs and verify services, note them:
+
+**Web Services:**
 - **Frontend URL**: (e.g., http://localhost:5173)
 - **API URL**: (e.g., http://localhost:8000)
+- **API Docs**: (e.g., http://localhost:8000/docs)
 - **Key paths**: /login, /dashboard, etc.
 
-**If URLs weren't documented in spec.md, ADD them now** so future sessions don't have to discover this again.
+**Background Services:**
+- **Redis**: localhost:6379 (if needed for Celery/caching)
+- **PostgreSQL**: localhost:5432 (if database)
+- **Celery Worker**: Running (process ID if helpful)
+- **Celery Beat**: Running (if scheduled tasks)
+
+**If this information wasn't in spec.md, ADD it to the Development Environment section** so future sessions don't have to discover this again.
+
+```bash
+# Example addition to spec.md
+cat >> spec.md << 'EOF'
+
+## Development Environment (Discovered by Coder Agent)
+
+### Services Required
+- Frontend: npm run dev (port 3000)
+- Backend: flask run (port 5000)
+- Celery Worker: celery -A app worker
+- Celery Beat: celery -A app beat
+- Redis: redis-server (port 6379)
+
+### URLs
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
+- API Docs: http://localhost:5000/docs
+EOF
+```
 
 ---
 
@@ -472,6 +575,31 @@ Before every Puppeteer session, verify:
 4. ✅ You have the correct paths for the page you need (/login, /dashboard, etc.)
 
 If Puppeteer shows blank/error pages, STOP and fix the URL issue first!
+
+### Background Service Checklist
+Before testing features that use background processing:
+1. ✅ **Celery Worker running** (if async tasks like email, file processing)
+2. ✅ **Celery Beat running** (if scheduled/periodic tasks)
+3. ✅ **Redis running** (often required by Celery)
+4. ✅ **Database running** (PostgreSQL, MySQL, etc.)
+
+**Common symptoms of missing background services:**
+- Tasks submitted but never complete → Celery worker not running
+- Scheduled jobs not executing → Celery beat not running
+- "Connection refused" errors → Redis or database not running
+- Slow page loads hanging forever → Background service crashed
+
+**Quick verification:**
+```bash
+# Check all required processes
+ps aux | grep -E "celery|redis|postgres" | grep -v grep
+
+# Test Redis connection
+redis-cli ping
+
+# Check Celery worker status
+celery -A app inspect active 2>/dev/null || echo "Celery worker not responding"
+```
 
 ---
 
