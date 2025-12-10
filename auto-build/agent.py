@@ -510,7 +510,7 @@ async def run_autonomous_agent(
 
         # Generate appropriate prompt
         if first_run:
-            prompt = generate_planner_prompt(spec_dir)
+            prompt = generate_planner_prompt(spec_dir, project_dir)
             first_run = False
         else:
             if not next_chunk:

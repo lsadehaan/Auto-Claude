@@ -22,6 +22,7 @@ Terminology mapping (technical -> user-friendly):
 Enhanced with icons, colors, and interactive menus.
 """
 
+import shutil
 import subprocess
 import sys
 from enum import Enum
@@ -182,11 +183,47 @@ def choose_workspace(
         return WorkspaceMode.ISOLATED
 
 
+def copy_spec_to_worktree(
+    source_spec_dir: Path,
+    worktree_path: Path,
+    spec_name: str,
+) -> Path:
+    """
+    Copy spec files into the worktree so the AI can access them.
+
+    The AI's filesystem is restricted to the worktree, so spec files
+    must be copied inside for access.
+
+    Args:
+        source_spec_dir: Original spec directory (may be outside worktree)
+        worktree_path: Path to the worktree
+        spec_name: Name of the spec folder
+
+    Returns:
+        Path to the spec directory inside the worktree
+    """
+    # Determine target location inside worktree
+    # Use auto-build/specs/{spec_name}/ as the standard location
+    target_spec_dir = worktree_path / "auto-build" / "specs" / spec_name
+
+    # Create parent directories if needed
+    target_spec_dir.parent.mkdir(parents=True, exist_ok=True)
+
+    # Copy spec files (overwrite if exists to get latest)
+    if target_spec_dir.exists():
+        shutil.rmtree(target_spec_dir)
+
+    shutil.copytree(source_spec_dir, target_spec_dir)
+
+    return target_spec_dir
+
+
 def setup_workspace(
     project_dir: Path,
     spec_name: str,
     mode: WorkspaceMode,
-) -> tuple[Path, Optional[WorktreeManager]]:
+    source_spec_dir: Optional[Path] = None,
+) -> tuple[Path, Optional[WorktreeManager], Optional[Path]]:
     """
     Set up the workspace based on user's choice.
 
@@ -197,13 +234,19 @@ def setup_workspace(
         project_dir: The project directory
         spec_name: Name of the spec being built
         mode: The workspace mode to use
+        source_spec_dir: Optional source spec directory to copy to worktree
 
     Returns:
-        Tuple of (working_directory, worktree_manager or None)
+        Tuple of (working_directory, worktree_manager or None, localized_spec_dir or None)
+
+        When using isolated mode with source_spec_dir:
+        - working_directory: Path to the worktree
+        - worktree_manager: Manager for the worktree
+        - localized_spec_dir: Path to spec files INSIDE the worktree (accessible to AI)
     """
     if mode == WorkspaceMode.DIRECT:
-        # Work directly in project
-        return project_dir, None
+        # Work directly in project - spec_dir stays as-is
+        return project_dir, None, source_spec_dir
 
     # Create isolated workspace using staging worktree
     print()
@@ -215,10 +258,18 @@ def setup_workspace(
     # Get or create the staging worktree
     info = manager.get_or_create_staging(spec_name)
 
+    # Copy spec files to worktree if provided
+    localized_spec_dir = None
+    if source_spec_dir and source_spec_dir.exists():
+        localized_spec_dir = copy_spec_to_worktree(
+            source_spec_dir, info.path, spec_name
+        )
+        print_status(f"Spec files copied to workspace", "success")
+
     print_status(f"Workspace ready: {info.path.name}", "success")
     print()
 
-    return info.path, manager
+    return info.path, manager, localized_spec_dir
 
 
 def show_build_summary(manager: WorktreeManager, name: str = STAGING_WORKTREE_NAME) -> None:

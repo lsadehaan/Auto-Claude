@@ -23,6 +23,63 @@ from linear_integration import (
 )
 
 
+def get_relative_spec_path(spec_dir: Path, project_dir: Path) -> str:
+    """
+    Get the spec directory path relative to the project/working directory.
+
+    This ensures the AI gets a usable path regardless of absolute locations.
+
+    Args:
+        spec_dir: Absolute path to spec directory
+        project_dir: Absolute path to project/working directory
+
+    Returns:
+        Relative path string (e.g., "./auto-build/specs/003-new-spec")
+    """
+    try:
+        # Try to make path relative to project_dir
+        relative = spec_dir.relative_to(project_dir)
+        return f"./{relative}"
+    except ValueError:
+        # If spec_dir is not under project_dir, return the name only
+        # This shouldn't happen if workspace.py correctly copies spec files
+        return f"./auto-build/specs/{spec_dir.name}"
+
+
+def generate_environment_context(project_dir: Path, spec_dir: Path) -> str:
+    """
+    Generate environment context header for prompts.
+
+    This explicitly tells the AI where it is working, preventing path confusion.
+
+    Args:
+        project_dir: The working directory for the AI
+        spec_dir: The spec directory (may be absolute or relative)
+
+    Returns:
+        Markdown string with environment context
+    """
+    relative_spec = get_relative_spec_path(spec_dir, project_dir)
+
+    return f"""## YOUR ENVIRONMENT
+
+**Working Directory:** `{project_dir}`
+**Spec Location:** `{relative_spec}/`
+
+Your filesystem is restricted to your working directory. All file paths should be
+relative to this location. Do NOT use absolute paths.
+
+**Important Files:**
+- Spec: `{relative_spec}/spec.md`
+- Plan: `{relative_spec}/implementation_plan.json`
+- Progress: `{relative_spec}/build-progress.txt`
+- Context: `{relative_spec}/context.json`
+
+---
+
+"""
+
+
 def generate_chunk_prompt(
     spec_dir: Path,
     project_dir: Path,
@@ -36,7 +93,7 @@ def generate_chunk_prompt(
 
     Args:
         spec_dir: Directory containing spec files
-        project_dir: Root project directory
+        project_dir: Root project directory (working directory)
         chunk: The chunk to implement
         phase: The phase containing this chunk
         attempt_count: Number of previous attempts (for retry context)
@@ -53,8 +110,14 @@ def generate_chunk_prompt(
     patterns_from = chunk.get("patterns_from", [])
     verification = chunk.get("verification", {})
 
+    # Get relative spec path
+    relative_spec = get_relative_spec_path(spec_dir, project_dir)
+
     # Build the prompt
     sections = []
+
+    # Environment context first
+    sections.append(generate_environment_context(project_dir, spec_dir))
 
     # Header
     sections.append(f"""# Chunk Implementation Task
@@ -182,13 +245,14 @@ Before marking complete, verify:
     return "\n".join(sections)
 
 
-def generate_planner_prompt(spec_dir: Path) -> str:
+def generate_planner_prompt(spec_dir: Path, project_dir: Optional[Path] = None) -> str:
     """
     Generate the planner prompt (used only once at start).
     This is a simplified version that focuses on plan creation.
 
     Args:
         spec_dir: Directory containing spec.md
+        project_dir: Working directory (for relative paths)
 
     Returns:
         Planner prompt string
@@ -202,18 +266,30 @@ def generate_planner_prompt(spec_dir: Path) -> str:
     else:
         prompt = "Read spec.md and create implementation_plan.json with phases and chunks."
 
-    # Inject spec location
-    header = f"""## SPEC LOCATION
+    # Use project_dir for relative paths, or infer from spec_dir
+    if project_dir is None:
+        # Infer: spec_dir is typically project/auto-build/specs/XXX
+        project_dir = spec_dir.parent.parent.parent
 
-Your spec file is located at: `{spec_dir}/spec.md`
+    # Get relative path for spec directory
+    relative_spec = get_relative_spec_path(spec_dir, project_dir)
+
+    # Build header with environment context
+    header = generate_environment_context(project_dir, spec_dir)
+
+    # Add spec-specific instructions
+    header += f"""## SPEC LOCATION
+
+Your spec file is located at: `{relative_spec}/spec.md`
 
 Store all build artifacts in this spec directory:
-- `{spec_dir}/implementation_plan.json` - Chunk-based implementation plan
-- `{spec_dir}/build-progress.txt` - Progress notes
-- `{spec_dir}/init.sh` - Environment setup script
-- `{spec_dir}/.linear_project.json` - Linear integration state (if enabled)
+- `{relative_spec}/implementation_plan.json` - Chunk-based implementation plan
+- `{relative_spec}/build-progress.txt` - Progress notes
+- `{relative_spec}/init.sh` - Environment setup script
+- `{relative_spec}/.linear_project.json` - Linear integration state (if enabled)
 
-The project root is the parent of auto-build/. Implement code in the project root, not in the spec directory.
+The project root is your current working directory. Implement code in the project root,
+not in the spec directory.
 
 ---
 

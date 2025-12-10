@@ -1471,11 +1471,6 @@ Read the failed files, understand the errors, and fix them.
             style="heavy"
         ))
 
-        print()
-        print(f"  {muted('To start the build:')}")
-        print(f"    {highlight(f'python auto-build/run.py --spec {self.spec_dir.name}')}")
-        print()
-
         return True
 
 
@@ -1555,6 +1550,11 @@ Examples:
         action="store_true",
         help="Dev mode: specs saved to dev/auto-build/specs/ (gitignored), code changes target auto-build/",
     )
+    parser.add_argument(
+        "--no-build",
+        action="store_true",
+        help="Don't automatically start the build after spec creation (default: auto-start build)",
+    )
 
     args = parser.parse_args()
 
@@ -1603,7 +1603,40 @@ Examples:
 
     try:
         success = asyncio.run(orchestrator.run(interactive=args.interactive or not task_description))
-        sys.exit(0 if success else 1)
+
+        if not success:
+            sys.exit(1)
+
+        # Auto-start build unless --no-build is specified
+        if not args.no_build:
+            print()
+            print_section("STARTING BUILD", Icons.LIGHTNING)
+            print()
+
+            # Build the run.py command
+            run_script = Path(__file__).parent / "run.py"
+            run_cmd = [
+                sys.executable,
+                str(run_script),
+                "--spec", orchestrator.spec_dir.name,
+            ]
+
+            # Pass through dev mode
+            if args.dev:
+                run_cmd.append("--dev")
+
+            # Pass through model if not default
+            if args.model != "claude-opus-4-5-20251101":
+                run_cmd.extend(["--model", args.model])
+
+            print(f"  {muted('Running:')} {' '.join(run_cmd)}")
+            print()
+
+            # Execute run.py - replace current process
+            os.execv(sys.executable, run_cmd)
+
+        sys.exit(0)
+
     except KeyboardInterrupt:
         print("\n\nSpec creation interrupted.")
         print(f"To continue: python auto-build/spec_runner.py --continue {orchestrator.spec_dir.name}")

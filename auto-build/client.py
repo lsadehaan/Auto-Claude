@@ -160,10 +160,14 @@ def create_client(project_dir: Path, spec_dir: Path, model: str) -> ClaudeSDKCli
         options=ClaudeCodeOptions(
             model=model,
             system_prompt=(
-                "You are an expert full-stack developer building production-quality software. "
-                "You follow existing code patterns, write clean maintainable code, and verify "
-                "your work through thorough testing. You communicate progress through Git commits "
-                "and build-progress.txt updates."
+                f"You are an expert full-stack developer building production-quality software. "
+                f"Your working directory is: {project_dir.resolve()}\n"
+                f"Your filesystem access is RESTRICTED to this directory only. "
+                f"Use relative paths (starting with ./) for all file operations. "
+                f"Never use absolute paths or try to access files outside your working directory.\n\n"
+                f"You follow existing code patterns, write clean maintainable code, and verify "
+                f"your work through thorough testing. You communicate progress through Git commits "
+                f"and build-progress.txt updates."
             ),
             allowed_tools=allowed_tools_list,
             mcp_servers=mcp_servers,

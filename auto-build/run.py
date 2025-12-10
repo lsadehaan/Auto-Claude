@@ -593,9 +593,12 @@ def main() -> None:
         )
 
         if workspace_mode == WorkspaceMode.ISOLATED:
-            working_dir, worktree_manager = setup_workspace(
-                project_dir, spec_dir.name, workspace_mode
+            working_dir, worktree_manager, localized_spec_dir = setup_workspace(
+                project_dir, spec_dir.name, workspace_mode, source_spec_dir=spec_dir
             )
+            # Use the localized spec directory (inside worktree) for AI access
+            if localized_spec_dir:
+                spec_dir = localized_spec_dir
 
     # Run the autonomous agent (sequential or parallel)
     try:

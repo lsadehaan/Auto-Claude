@@ -6,65 +6,90 @@ You are continuing work on an autonomous development task. This is a **FRESH con
 
 ---
 
+## CRITICAL: ENVIRONMENT AWARENESS
+
+**Your filesystem is RESTRICTED to your working directory.** You receive information about your
+environment at the start of each prompt in the "YOUR ENVIRONMENT" section. Pay close attention to:
+
+- **Working Directory**: This is your root - all paths are relative to here
+- **Spec Location**: Where your spec files live (usually `./auto-build/specs/{spec-name}/`)
+
+**RULES:**
+1. ALWAYS use relative paths starting with `./`
+2. NEVER use absolute paths (like `/Users/...`)
+3. NEVER assume paths exist - check with `ls` first
+4. If a file doesn't exist where expected, check the spec location from YOUR ENVIRONMENT section
+
+---
+
 ## STEP 1: GET YOUR BEARINGS (MANDATORY)
 
+First, check your environment. The prompt should tell you your working directory and spec location.
+If not provided, discover it:
+
 ```bash
-# 1. See your working directory
+# 1. See your working directory (this is your filesystem root)
 pwd && ls -la
 
-# 2. Read the implementation plan (your main source of truth)
-cat implementation_plan.json
+# 2. Find your spec directory (look for implementation_plan.json)
+find . -name "implementation_plan.json" -type f 2>/dev/null | head -5
 
-# 3. Read the project spec (requirements, patterns, scope)
-cat spec.md
+# 3. Set SPEC_DIR based on what you find (example - adjust path as needed)
+SPEC_DIR="./auto-build/specs/YOUR-SPEC-NAME"  # Replace with actual path from step 2
 
-# 4. Read the project index (services, ports, commands)
-cat project_index.json
+# 4. Read the implementation plan (your main source of truth)
+cat "$SPEC_DIR/implementation_plan.json"
 
-# 5. Read the task context (files to modify, patterns to follow)
-cat context.json
+# 5. Read the project spec (requirements, patterns, scope)
+cat "$SPEC_DIR/spec.md"
 
-# 6. Read progress from previous sessions
-cat build-progress.txt
+# 6. Read the project index (services, ports, commands)
+cat "$SPEC_DIR/project_index.json" 2>/dev/null || echo "No project index"
 
-# 7. Check recent git history
+# 7. Read the task context (files to modify, patterns to follow)
+cat "$SPEC_DIR/context.json" 2>/dev/null || echo "No context file"
+
+# 8. Read progress from previous sessions
+cat "$SPEC_DIR/build-progress.txt" 2>/dev/null || echo "No previous progress"
+
+# 9. Check recent git history
 git log --oneline -10
 
-# 8. Count progress
-echo "Completed chunks: $(grep -c '"status": "completed"' implementation_plan.json 2>/dev/null || echo 0)"
-echo "Pending chunks: $(grep -c '"status": "pending"' implementation_plan.json 2>/dev/null || echo 0)"
+# 10. Count progress
+echo "Completed chunks: $(grep -c '"status": "completed"' "$SPEC_DIR/implementation_plan.json" 2>/dev/null || echo 0)"
+echo "Pending chunks: $(grep -c '"status": "pending"' "$SPEC_DIR/implementation_plan.json" 2>/dev/null || echo 0)"
 
-# 9. READ SESSION MEMORY (CRITICAL - Learn from past sessions)
+# 11. READ SESSION MEMORY (CRITICAL - Learn from past sessions)
 echo "=== SESSION MEMORY ==="
 
 # Read codebase map (what files do what)
-if [ -f memory/codebase_map.json ]; then
+if [ -f "$SPEC_DIR/memory/codebase_map.json" ]; then
   echo "Codebase Map:"
-  cat memory/codebase_map.json
+  cat "$SPEC_DIR/memory/codebase_map.json"
 else
   echo "No codebase map yet (first session)"
 fi
 
 # Read patterns to follow
-if [ -f memory/patterns.md ]; then
+if [ -f "$SPEC_DIR/memory/patterns.md" ]; then
   echo -e "\nCode Patterns to Follow:"
-  cat memory/patterns.md
+  cat "$SPEC_DIR/memory/patterns.md"
 else
   echo "No patterns documented yet"
 fi
 
 # Read gotchas to avoid
-if [ -f memory/gotchas.md ]; then
+if [ -f "$SPEC_DIR/memory/gotchas.md" ]; then
   echo -e "\nGotchas to Avoid:"
-  cat memory/gotchas.md
+  cat "$SPEC_DIR/memory/gotchas.md"
 else
   echo "No gotchas documented yet"
 fi
 
 # Read recent session insights (last 3 sessions)
-if [ -d memory/session_insights ]; then
+if [ -d "$SPEC_DIR/memory/session_insights" ]; then
   echo -e "\nRecent Session Insights:"
-  ls -t memory/session_insights/session_*.json 2>/dev/null | head -3 | while read file; do
+  ls -t "$SPEC_DIR/memory/session_insights/session_*.json" 2>/dev/null | head -3 | while read file; do
     echo "--- $file ---"
     cat "$file"
   done
