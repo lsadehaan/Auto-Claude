@@ -68,7 +68,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     taskError: true,
     buildProgress: false,
   },
-  onboardingCompleted: true, // Skip onboarding in web mode
+  onboardingCompleted: false, // Show onboarding for new users
 };
 
 /**
