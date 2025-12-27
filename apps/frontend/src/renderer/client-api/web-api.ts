@@ -235,9 +235,6 @@ const METHOD_TO_CHANNEL: Record<string, string> = {
   checkGitStatus: 'git:checkStatus',
   initializeGit: 'git:initialize',
 
-  // App
-  getAppVersion: 'app:version',
-
   // Shell
   openExternal: 'shell:openExternal',
 
