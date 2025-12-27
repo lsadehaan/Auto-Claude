@@ -15,54 +15,29 @@ import { createWebAPI, type WebAPI } from './web-api';
 // Detect if running in Electron
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
-// Create the appropriate API implementation
-let apiInstance: WebAPI | typeof window.electronAPI;
-
-if (isElectron) {
-  // Use Electron IPC API
-  apiInstance = (window as any).electronAPI;
-  console.log('[API] Using Electron IPC API');
-} else {
-  // Use Web HTTP/WebSocket API
-  try {
-    apiInstance = createWebAPI();
-    console.log('[API] Using Web HTTP/WebSocket API');
-    console.log('[API] API instance created:', !!apiInstance);
-    console.log('[API] Has getAppVersion:', !!(apiInstance as any).getAppVersion);
-    console.log('[API] Has onTaskProgress:', !!(apiInstance as any).onTaskProgress);
-  } catch (error) {
-    console.error('[API] Failed to create Web API:', error);
-    throw error;
-  }
-}
-
-if (!apiInstance) {
-  throw new Error('[API] FATAL: API instance is undefined!');
-}
+console.log('[API] Initializing API... isElectron:', isElectron);
 
 /**
- * Unified API instance with lazy initialization
+ * Unified API instance
  * Use this throughout the application instead of window.electronAPI directly
- *
- * IMPORTANT: We use a Proxy to handle race conditions where components
- * might try to access the API before module initialization completes
  */
-export const api = new Proxy({} as typeof apiInstance, {
-  get(_target, prop) {
-    if (!apiInstance) {
-      console.error(`[API] Attempted to access '${String(prop)}' before API initialization!`);
-      throw new Error(`API not initialized - cannot access ${String(prop)}`);
-    }
-    return (apiInstance as any)[prop];
-  },
-  set(_target, prop, value) {
-    if (!apiInstance) {
-      throw new Error(`API not initialized - cannot set ${String(prop)}`);
-    }
-    (apiInstance as any)[prop] = value;
-    return true;
+export const api = ((): WebAPI | typeof window.electronAPI => {
+  if (isElectron) {
+    console.log('[API] Using Electron IPC API');
+    return (window as any).electronAPI;
+  } else {
+    console.log('[API] Creating Web HTTP/WebSocket API');
+    const instance = createWebAPI();
+    console.log('[API] Web API created:', {
+      exists: !!instance,
+      hasGetAppVersion: !!(instance as any)?.getAppVersion,
+      hasOnTaskProgress: !!(instance as any)?.onTaskProgress,
+      type: typeof instance,
+      keys: instance ? Object.keys(instance).slice(0, 10) : []
+    });
+    return instance;
   }
-});
+})();
 
 /**
  * Check if running in Electron environment
