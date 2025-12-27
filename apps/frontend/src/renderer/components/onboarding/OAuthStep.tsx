@@ -25,6 +25,7 @@ import { Card, CardContent } from '../ui/card';
 import { cn } from '../../lib/utils';
 import { loadClaudeProfiles as loadGlobalClaudeProfiles } from '../../stores/claude-profile-store';
 import type { ClaudeProfile } from '../../../shared/types';
+import { api } from '../../client-api';
 
 interface OAuthStepProps {
   onNext: () => void;
@@ -69,7 +70,7 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
     setIsLoadingProfiles(true);
     setError(null);
     try {
-      const result = await window.electronAPI.getClaudeProfiles();
+      const result = await api.getClaudeProfiles();
       if (result.success && result.data) {
         setClaudeProfiles(result.data.profiles);
         setActiveProfileId(result.data.activeProfileId);
@@ -90,7 +91,7 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
 
   // Listen for OAuth authentication completion
   useEffect(() => {
-    const unsubscribe = window.electronAPI.onTerminalOAuthToken(async (info) => {
+    const unsubscribe = api.onTerminalOAuthToken(async (info) => {
       if (info.success && info.profileId) {
         // Reload profiles to show updated state
         await loadClaudeProfiles();
@@ -112,7 +113,7 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
       const profileName = newProfileName.trim();
       const profileSlug = profileName.toLowerCase().replace(/\s+/g, '-');
 
-      const result = await window.electronAPI.saveClaudeProfile({
+      const result = await api.saveClaudeProfile({
         id: `profile-${Date.now()}`,
         name: profileName,
         configDir: `~/.claude-profiles/${profileSlug}`,
@@ -121,26 +122,34 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
       });
 
       if (result.success && result.data) {
-        // Initialize the profile (starts OAuth flow)
-        const initResult = await window.electronAPI.initializeClaudeProfile(result.data.id);
+        const profileId = result.data.id;
+
+        // Initialize the profile (in web mode: gets token instructions)
+        const initResult = await api.initializeClaudeProfile(profileId);
 
         if (initResult.success) {
           await loadClaudeProfiles();
           setNewProfileName('');
 
-          alert(
-            `Authenticating "${profileName}"...\n\n` +
-            `A browser window will open for you to log in with your Claude account.\n\n` +
-            `The authentication will be saved automatically once complete.`
-          );
+          // In web mode, automatically open token entry
+          if (initResult.data?.requiresManualToken) {
+            setExpandedTokenProfileId(profileId);
+            // No ugly alert - just smoothly expand the token entry form
+          } else {
+            // Fallback for other modes
+            alert(
+              `Authenticating "${profileName}"...\n\n` +
+              `A browser window will open for you to log in with your Claude account.\n\n` +
+              `The authentication will be saved automatically once complete.`
+            );
+          }
         } else {
           await loadClaudeProfiles();
-          alert(`Failed to start authentication: ${initResult.error || 'Please try again.'}`);
+          setError(initResult.error || 'Failed to start authentication');
         }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add profile');
-      alert('Failed to add profile. Please try again.');
     } finally {
       setIsAddingProfile(false);
     }
@@ -150,7 +159,7 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
     setDeletingProfileId(profileId);
     setError(null);
     try {
-      const result = await window.electronAPI.deleteClaudeProfile(profileId);
+      const result = await api.deleteClaudeProfile(profileId);
       if (result.success) {
         await loadClaudeProfiles();
       }
@@ -176,7 +185,7 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
 
     setError(null);
     try {
-      const result = await window.electronAPI.renameClaudeProfile(editingProfileId, editingProfileName.trim());
+      const result = await api.renameClaudeProfile(editingProfileId, editingProfileName.trim());
       if (result.success) {
         await loadClaudeProfiles();
       }
@@ -191,7 +200,7 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
   const handleSetActiveProfile = async (profileId: string) => {
     setError(null);
     try {
-      const result = await window.electronAPI.setActiveClaudeProfile(profileId);
+      const result = await api.setActiveClaudeProfile(profileId);
       if (result.success) {
         setActiveProfileId(profileId);
         await loadGlobalClaudeProfiles();
@@ -205,19 +214,25 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
     setAuthenticatingProfileId(profileId);
     setError(null);
     try {
-      const initResult = await window.electronAPI.initializeClaudeProfile(profileId);
+      const initResult = await api.initializeClaudeProfile(profileId);
       if (initResult.success) {
-        alert(
-          `Authenticating profile...\n\n` +
-          `A browser window will open for you to log in with your Claude account.\n\n` +
-          `The authentication will be saved automatically once complete.`
-        );
+        // In web mode, automatically open token entry
+        if (initResult.data?.requiresManualToken) {
+          setExpandedTokenProfileId(profileId);
+          // Smooth UX - no alert
+        } else {
+          // Fallback for other modes
+          alert(
+            `Authenticating profile...\n\n` +
+            `A browser window will open for you to log in with your Claude account.\n\n` +
+            `The authentication will be saved automatically once complete.`
+          );
+        }
       } else {
-        alert(`Failed to start authentication: ${initResult.error || 'Please try again.'}`);
+        setError(initResult.error || 'Failed to start authentication');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to authenticate profile');
-      alert('Failed to start authentication. Please try again.');
     } finally {
       setAuthenticatingProfileId(null);
     }
@@ -243,7 +258,7 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
     setSavingTokenProfileId(profileId);
     setError(null);
     try {
-      const result = await window.electronAPI.setClaudeProfileToken(
+      const result = await api.setClaudeProfileToken(
         profileId,
         manualToken.trim(),
         manualTokenEmail.trim() || undefined

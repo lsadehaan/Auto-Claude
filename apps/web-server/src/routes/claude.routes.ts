@@ -207,6 +207,32 @@ router.post('/profiles/:id/token', (req, res) => {
   }
 });
 
+// POST /api/claude/profiles/:id/initialize - Guide to manual token (web mode)
+router.post('/profiles/:id/initialize', (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = loadProfiles();
+
+    const profile = data.profiles.find(p => p.id === id);
+    if (!profile) {
+      return res.json({ success: false, error: 'Profile not found' });
+    }
+
+    // In web mode, we guide users to enter tokens manually
+    // (OAuth requires app credentials we don't have)
+    res.json({
+      success: true,
+      data: {
+        requiresManualToken: true,
+        profileId: id,
+        instructions: 'Get your token from claude.ai/settings'
+      }
+    });
+  } catch (error) {
+    res.json({ success: false, error: 'Failed to initialize profile' });
+  }
+});
+
 // Helper to update backend .env with the token
 function updateBackendToken(token: string): void {
   try {
