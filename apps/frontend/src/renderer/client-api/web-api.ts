@@ -51,6 +51,8 @@ async function request<T>(
       url += `?${params.toString()}`;
     }
 
+    console.log('[WebAPI] Request:', { method, url, body });
+
     const response = await fetch(url, {
       method,
       headers: {
@@ -60,8 +62,12 @@ async function request<T>(
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    return await response.json();
+    const result = await response.json();
+    console.log('[WebAPI] Response:', { url, result });
+
+    return result;
   } catch (error) {
+    console.error('[WebAPI] Error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Request failed',
