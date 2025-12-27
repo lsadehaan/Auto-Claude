@@ -62,6 +62,21 @@ jobs:
         working-directory: apps/web-server
         run: npm run build
 
+      - name: Deploy to production directory
+        run: |
+          # Sync built files to production directory
+          sudo rsync -av --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.venv' \
+            --exclude='.auto-claude' \
+            --exclude='apps/frontend/node_modules' \
+            --exclude='apps/web-server/node_modules' \
+            --exclude='apps/backend/.venv' \
+            ./ /opt/auto-claude/
+
+          echo "✅ Files synced to /opt/auto-claude"
+
       - name: Restart Auto-Claude service
         run: |
           sudo systemctl restart auto-claude
