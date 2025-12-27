@@ -532,8 +532,16 @@ export function createWebAPI() {
   // Create Proxy that auto-generates methods from channel mappings
   return new Proxy(manualMethods, {
     get(target, prop: string) {
+      // Skip internal properties and symbols
+      if (typeof prop === 'symbol' || prop.startsWith('_')) {
+        return target[prop];
+      }
+
       // First check manual overrides
       if (prop in target) {
+        if (prop === 'getClaudeProfiles' || prop === 'checkOllamaStatus' || prop === 'saveSettings') {
+          console.log(`[WebAPI Proxy] Accessing ${prop}: found in manual methods`);
+        }
         return target[prop];
       }
 
@@ -541,6 +549,9 @@ export function createWebAPI() {
       const channel = METHOD_TO_CHANNEL[prop];
       if (channel && channel in CHANNEL_TO_HTTP) {
         const mapping = CHANNEL_TO_HTTP[channel];
+        if (prop === 'getClaudeProfiles' || prop === 'checkOllamaStatus' || prop === 'saveSettings') {
+          console.log(`[WebAPI Proxy] Accessing ${prop}: auto-generated from channel ${channel}`, mapping);
+        }
         return createAutoMethod(mapping);
       }
 
@@ -548,10 +559,16 @@ export function createWebAPI() {
       const directChannel = prop.replace(/([A-Z])/g, ':$1').toLowerCase();
       if (directChannel in CHANNEL_TO_HTTP) {
         const mapping = CHANNEL_TO_HTTP[directChannel];
+        if (prop === 'getClaudeProfiles' || prop === 'checkOllamaStatus' || prop === 'saveSettings') {
+          console.log(`[WebAPI Proxy] Accessing ${prop}: auto-generated from direct channel ${directChannel}`, mapping);
+        }
         return createAutoMethod(mapping);
       }
 
       // Unknown method - return stub
+      if (prop === 'getClaudeProfiles' || prop === 'checkOllamaStatus' || prop === 'saveSettings') {
+        console.warn(`[WebAPI Proxy] Accessing ${prop}: NOT FOUND - returning stub error`);
+      }
       console.warn(`[WebAPI] Unknown method: ${prop}`);
       return stubError(prop, `Method '${prop}' not implemented`);
     },

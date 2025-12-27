@@ -40,6 +40,10 @@ export const api = ((): WebAPI | typeof window.electronAPI => {
       exists: !!instance,
       hasGetAppVersion: !!(instance as any)?.getAppVersion,
       hasOnTaskProgress: !!(instance as any)?.onTaskProgress,
+      hasGetClaudeProfiles: !!(instance as any)?.getClaudeProfiles,
+      hasCheckOllamaStatus: !!(instance as any)?.checkOllamaStatus,
+      hasSaveSettings: !!(instance as any)?.saveSettings,
+      hasGetMemoryInfrastructureStatus: !!(instance as any)?.getMemoryInfrastructureStatus,
       type: typeof instance,
       moduleId: (instance as any).__moduleId,
       keys: instance ? Object.keys(instance).slice(0, 10) : []
