@@ -50,9 +50,9 @@ import { RateLimitModal } from './components/RateLimitModal';
 import { SDKRateLimitModal } from './components/SDKRateLimitModal';
 import { VersionDisplay } from './components/VersionDisplay';
 import { OnboardingWizard } from './components/onboarding';
-import { AppUpdateNotification } from './components/AppUpdateNotification';
-import { UsageIndicator } from './components/UsageIndicator';
-import { ProactiveSwapListener } from './components/ProactiveSwapListener';
+// import { AppUpdateNotification } from './components/AppUpdateNotification';
+// import { UsageIndicator } from './components/UsageIndicator';
+// import { ProactiveSwapListener } from './components/ProactiveSwapListener';
 import { GitHubSetupModal } from './components/GitHubSetupModal';
 import { useProjectStore, loadProjects, addProject, initializeProject } from './stores/project-store';
 import { useTaskStore, loadTasks } from './stores/task-store';
@@ -542,7 +542,7 @@ export function App() {
 
   return (
     <TooltipProvider>
-      <ProactiveSwapListener />
+      {/* <ProactiveSwapListener /> */}
       <div className="flex h-screen bg-background">
         {/* Sidebar */}
         <Sidebar
@@ -599,7 +599,7 @@ export function App() {
             </div>
             {selectedProject && (
               <div className="electron-no-drag flex items-center gap-3">
-                <UsageIndicator />
+                {/* <UsageIndicator /> */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -835,7 +835,7 @@ export function App() {
         />
 
         {/* App Update Notification - shows when new app version is available */}
-        <AppUpdateNotification />
+        {/* <AppUpdateNotification /> */}
 
         {/* Add Project Modal - shows when adding a new project */}
         <AddProjectModal
