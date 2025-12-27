@@ -127,6 +127,9 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
         // Initialize the profile (in web mode: gets token instructions)
         const initResult = await api.initializeClaudeProfile(profileId);
 
+        // DEBUG: Log the response
+        console.log('[OAuthStep] initializeClaudeProfile response:', initResult);
+
         if (initResult.success) {
           await loadClaudeProfiles();
           setNewProfileName('');
@@ -137,6 +140,7 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
             // No ugly alert - just smoothly expand the token entry form
           } else {
             // Fallback for other modes
+            console.log('[OAuthStep] requiresManualToken NOT detected, showing alert. Data:', initResult.data);
             alert(
               `Authenticating "${profileName}"...\n\n` +
               `A browser window will open for you to log in with your Claude account.\n\n` +
