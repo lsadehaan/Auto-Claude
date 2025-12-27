@@ -181,11 +181,15 @@ class SSHKeyService {
         // Ignore errors if known_hosts already has the key
       }
 
-      const sshConfig = this.getGitSSHConfig();
-      const output = execSync('ssh -T git@github.com', {
+      // Use the SSH key directly in the command (GIT_SSH_COMMAND only works with git commands)
+      const sshCommand = process.platform === 'win32'
+        ? `ssh -i "${this.keyPath}" -o StrictHostKeyChecking=accept-new -T git@github.com`
+        : `ssh -i ${this.keyPath} -o StrictHostKeyChecking=accept-new -T git@github.com`;
+
+      const output = execSync(sshCommand, {
         encoding: 'utf-8',
         stdio: 'pipe',
-        env: { ...process.env, ...sshConfig },
+        shell: process.platform === 'win32' ? 'cmd.exe' : '/bin/sh',
         timeout: 10000,
       });
 
