@@ -16,6 +16,7 @@ import { OAuthStep } from './OAuthStep';
 import { MemoryStep } from './MemoryStep';
 import { CompletionStep } from './CompletionStep';
 import { useSettingsStore } from '../../stores/settings-store';
+import { api } from '../../client-api';
 
 interface OnboardingWizardProps {
   open: boolean;
@@ -92,7 +93,7 @@ export function OnboardingWizard({
   const skipWizard = useCallback(async () => {
     // Mark onboarding as completed and close - save to disk AND update local state
     try {
-      const result = await window.electronAPI.saveSettings({ onboardingCompleted: true });
+      const result = await api.saveSettings({ onboardingCompleted: true });
       if (!result?.success) {
         console.error('Failed to save onboarding completion:', result?.error);
       }
@@ -106,8 +107,16 @@ export function OnboardingWizard({
 
   const finishWizard = useCallback(async () => {
     // Mark onboarding as completed - save to disk AND update local state
+    console.log('[finishWizard] About to call api.saveSettings, api =', {
+      type: typeof api,
+      isUndefined: api === undefined,
+      isNull: api === null,
+      hasSaveSettings: typeof (api as any)?.saveSettings,
+      api: api,
+      windowAPI: (window as any).__claudeAPI
+    });
     try {
-      const result = await window.electronAPI.saveSettings({ onboardingCompleted: true });
+      const result = await api.saveSettings({ onboardingCompleted: true });
       if (!result?.success) {
         console.error('Failed to save onboarding completion:', result?.error);
       }
