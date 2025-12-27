@@ -143,13 +143,30 @@ setupWebSocket(wss);
 // Serve static React SPA (if built)
 const staticPath = config.frontendDistPath;
 if (existsSync(staticPath)) {
-  app.use(express.static(staticPath));
+  // Serve static files with proper cache control
+  app.use(express.static(staticPath, {
+    setHeaders: (res, path) => {
+      // Cache hashed assets forever (they have content hashes in filenames)
+      if (path.match(/\.(js|css)$/) && path.match(/-[a-zA-Z0-9]{8}\./)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      } else {
+        // Never cache HTML and other files
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+    }
+  }));
 
   // SPA fallback - serve index.html for all non-API routes
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/ws')) {
       return next();
     }
+    // Always revalidate index.html
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.sendFile(join(staticPath, 'index.html'));
   });
 } else {
