@@ -21,7 +21,13 @@ let wsClient: WebSocketClient | null = null;
 
 function getWsClient(): WebSocketClient {
   if (!wsClient) {
-    wsClient = new WebSocketClient(WS_BASE_URL);
+    // If WS_BASE_URL is empty, construct it from current page location
+    let wsUrl = WS_BASE_URL;
+    if (!wsUrl) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      wsUrl = `${protocol}//${window.location.host}`;
+    }
+    wsClient = new WebSocketClient(wsUrl);
   }
   return wsClient;
 }

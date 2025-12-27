@@ -52,7 +52,9 @@ jobs:
 
       - name: Build web frontend
         working-directory: apps/frontend
-        run: npm run web:build
+        run: |
+          export VITE_GIT_COMMIT=$(git rev-parse --short HEAD)
+          npm run web:build
 
       - name: Install web-server dependencies
         working-directory: apps/web-server

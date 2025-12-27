@@ -83,8 +83,12 @@ export default defineConfig({
   define: {
     // Mark as web production mode - disables browser mock
     'import.meta.env.VITE_WEB_MODE': JSON.stringify('true'),
+    // Git commit hash for deployment tracking
+    'import.meta.env.VITE_GIT_COMMIT': JSON.stringify(process.env.VITE_GIT_COMMIT || 'dev'),
     // Ensure environment variables are available
-    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://localhost:3001/api'),
-    'import.meta.env.VITE_WS_URL': JSON.stringify(process.env.VITE_WS_URL || 'ws://localhost:3001'),
+    // For production, use relative URLs so requests go through Caddy proxy
+    // For development, use localhost:3001
+    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3001/api')),
+    'import.meta.env.VITE_WS_URL': JSON.stringify(process.env.VITE_WS_URL || (process.env.NODE_ENV === 'production' ? '' : 'ws://localhost:3001')),
   },
 });
