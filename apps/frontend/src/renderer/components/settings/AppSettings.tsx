@@ -18,6 +18,15 @@ import {
   Monitor,
   Globe
 } from 'lucide-react';
+import { api } from '../../client-api';
+
+console.log('[AppSettings MODULE LOAD] api imported:', {
+  type: typeof api,
+  isUndefined: api === undefined,
+  hasGetAppVersion: typeof (api as any)?.getAppVersion,
+  moduleId: (api as any)?.__moduleId,
+  stackTrace: new Error().stack
+});
 import {
   FullScreenDialog,
   FullScreenDialogContent,
@@ -116,7 +125,27 @@ export function AppSettingsDialog({ open, onOpenChange, initialSection, initialP
 
   // Load app version on mount
   useEffect(() => {
-    window.electronAPI.getAppVersion().then(setVersion);
+    console.log('[AppSettings] useEffect running, api =', {
+      type: typeof api,
+      isUndefined: api === undefined,
+      isNull: api === null,
+      hasGetAppVersion: typeof (api as any)?.getAppVersion,
+      moduleId: (api as any)?.__moduleId,
+      windowAPI: (window as any).__claudeAPI,
+      windowModuleId: (window as any).__claudeAPIModuleId
+    });
+
+    if (!api) {
+      console.error('[AppSettings] API is falsy!', api);
+      return;
+    }
+
+    if (!(api as any).getAppVersion) {
+      console.error('[AppSettings] API has no getAppVersion method!', Object.keys(api as any).slice(0, 20));
+      return;
+    }
+
+    api.getAppVersion().then(setVersion);
   }, []);
 
   // Memoize the callback to avoid infinite loops

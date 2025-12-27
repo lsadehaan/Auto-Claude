@@ -3,6 +3,15 @@ import { useTaskStore } from '../stores/task-store';
 import { useRoadmapStore } from '../stores/roadmap-store';
 import { useRateLimitStore } from '../stores/rate-limit-store';
 import type { ImplementationPlan, TaskStatus, RoadmapGenerationStatus, Roadmap, ExecutionProgress, RateLimitInfo, SDKRateLimitInfo } from '../../shared/types';
+import { api } from '../client-api';
+
+console.log('[useIpc MODULE LOAD] api imported:', {
+  type: typeof api,
+  isUndefined: api === undefined,
+  hasOnTaskProgress: typeof (api as any)?.onTaskProgress,
+  moduleId: (api as any)?.__moduleId,
+  stackTrace: new Error().stack
+});
 
 /**
  * Hook to set up IPC event listeners for task updates
@@ -15,33 +24,48 @@ export function useIpcListeners(): void {
   const setError = useTaskStore((state) => state.setError);
 
   useEffect(() => {
+    console.log('[useIpc] useEffect running, api =', {
+      type: typeof api,
+      isUndefined: api === undefined,
+      isNull: api === null,
+      hasOnTaskProgress: typeof (api as any)?.onTaskProgress,
+      moduleId: (api as any)?.__moduleId,
+      windowAPI: (window as any).__claudeAPI,
+      windowModuleId: (window as any).__claudeAPIModuleId
+    });
+
+    if (!api) {
+      console.error('[useIpc] API is falsy!', api);
+      return;
+    }
+
     // Set up listeners
-    const cleanupProgress = window.electronAPI.onTaskProgress(
+    const cleanupProgress = api.onTaskProgress(
       (taskId: string, plan: ImplementationPlan) => {
         updateTaskFromPlan(taskId, plan);
       }
     );
 
-    const cleanupError = window.electronAPI.onTaskError(
+    const cleanupError = api.onTaskError(
       (taskId: string, error: string) => {
         setError(`Task ${taskId}: ${error}`);
         appendLog(taskId, `[ERROR] ${error}`);
       }
     );
 
-    const cleanupLog = window.electronAPI.onTaskLog(
+    const cleanupLog = api.onTaskLog(
       (taskId: string, log: string) => {
         appendLog(taskId, log);
       }
     );
 
-    const cleanupStatus = window.electronAPI.onTaskStatusChange(
+    const cleanupStatus = api.onTaskStatusChange(
       (taskId: string, status: TaskStatus) => {
         updateTaskStatus(taskId, status);
       }
     );
 
-    const cleanupExecutionProgress = window.electronAPI.onTaskExecutionProgress(
+    const cleanupExecutionProgress = api.onTaskExecutionProgress(
       (taskId: string, progress: ExecutionProgress) => {
         updateExecutionProgress(taskId, progress);
       }
@@ -54,7 +78,7 @@ export function useIpcListeners(): void {
       return currentProjectId === eventProjectId;
     };
 
-    const cleanupRoadmapProgress = window.electronAPI.onRoadmapProgress(
+    const cleanupRoadmapProgress = api.onRoadmapProgress(
       (projectId: string, status: RoadmapGenerationStatus) => {
         // Debug logging
         if (window.DEBUG) {
@@ -73,7 +97,7 @@ export function useIpcListeners(): void {
       }
     );
 
-    const cleanupRoadmapComplete = window.electronAPI.onRoadmapComplete(
+    const cleanupRoadmapComplete = api.onRoadmapComplete(
       (projectId: string, roadmap: Roadmap) => {
         // Debug logging
         if (window.DEBUG) {
@@ -96,7 +120,7 @@ export function useIpcListeners(): void {
       }
     );
 
-    const cleanupRoadmapError = window.electronAPI.onRoadmapError(
+    const cleanupRoadmapError = api.onRoadmapError(
       (projectId: string, error: string) => {
         // Debug logging
         if (window.DEBUG) {
@@ -118,7 +142,7 @@ export function useIpcListeners(): void {
       }
     );
 
-    const cleanupRoadmapStopped = window.electronAPI.onRoadmapStopped(
+    const cleanupRoadmapStopped = api.onRoadmapStopped(
       (projectId: string) => {
         // Debug logging
         if (window.DEBUG) {
@@ -140,7 +164,7 @@ export function useIpcListeners(): void {
 
     // Terminal rate limit listener
     const showRateLimitModal = useRateLimitStore.getState().showRateLimitModal;
-    const cleanupRateLimit = window.electronAPI.onTerminalRateLimit(
+    const cleanupRateLimit = api.onTerminalRateLimit(
       (info: RateLimitInfo) => {
         // Convert detectedAt string to Date if needed
         showRateLimitModal({
@@ -154,7 +178,7 @@ export function useIpcListeners(): void {
 
     // SDK rate limit listener (for changelog, tasks, roadmap, ideation)
     const showSDKRateLimitModal = useRateLimitStore.getState().showSDKRateLimitModal;
-    const cleanupSDKRateLimit = window.electronAPI.onSDKRateLimit(
+    const cleanupSDKRateLimit = api.onSDKRateLimit(
       (info: SDKRateLimitInfo) => {
         // Convert detectedAt string to Date if needed
         showSDKRateLimitModal({
@@ -188,15 +212,15 @@ export function useIpcListeners(): void {
  */
 export function useAppSettings() {
   const getSettings = async () => {
-    const result = await window.electronAPI.getSettings();
+    const result = await api.getSettings();
     if (result.success && result.data) {
       return result.data;
     }
     return null;
   };
 
-  const saveSettings = async (settings: Parameters<typeof window.electronAPI.saveSettings>[0]) => {
-    const result = await window.electronAPI.saveSettings(settings);
+  const saveSettings = async (settings: Parameters<typeof api.saveSettings>[0]) => {
+    const result = await api.saveSettings(settings);
     return result.success;
   };
 
@@ -208,7 +232,7 @@ export function useAppSettings() {
  */
 export function useAppVersion() {
   const getVersion = async () => {
-    return window.electronAPI.getAppVersion();
+    return api.getAppVersion();
   };
 
   return { getVersion };
