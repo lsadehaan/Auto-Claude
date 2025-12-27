@@ -11,8 +11,8 @@ Auto Claude is a multi-agent autonomous coding framework that builds software th
 ### Setup
 
 **Requirements:**
-- Python 3.12+ (required for backend)
-- Node.js (for frontend)
+- Python 3.10+ (required for backend)
+- Node.js 24+ (for frontend)
 
 ```bash
 # Install all dependencies from root
@@ -30,18 +30,55 @@ claude setup-token
 # Add to apps/backend/.env: CLAUDE_CODE_OAUTH_TOKEN=your-token
 ```
 
+### Troubleshooting Backend Issues
+
+**CRITICAL: Always verify the Python backend is properly configured before debugging frontend issues!**
+
+```bash
+# 1. Check Python backend dependencies are installed
+cd apps/backend
+python run.py --help  # Should show help without errors
+
+# If you see "ModuleNotFoundError", install dependencies:
+cd apps/backend
+uv venv  # Create virtual environment (if not exists)
+uv pip install -r requirements.txt  # Install all dependencies
+
+# 2. Verify Python backend can run
+cd apps/backend
+python run.py --list  # Should list specs (or show empty if none exist)
+
+# 3. Check backend environment (.env file)
+cat apps/backend/.env  # Should contain CLAUDE_CODE_OAUTH_TOKEN
+
+# 4. Test spec creation manually
+cd apps/backend
+python run.py --create-spec --task "test task" --project-dir /path/to/project
+# Should create spec in .auto-claude/specs/ directory
+
+# 5. Verify specs are created on disk
+ls -la /path/to/project/.auto-claude/specs/
+# Should show spec directories after creation
+
+# 6. Check web server backend connection
+# Web server spawns Python processes - verify it can find python and run.py
+cd apps/web-server
+npm run dev  # Check logs for "Python: python" and "Backend: /path/to/backend"
+```
+
+**Common Backend Issues:**
+- **Missing dependencies**: Run `uv pip install -r requirements.txt` in apps/backend
+- **No OAuth token**: Set `CLAUDE_CODE_OAUTH_TOKEN` in apps/backend/.env
+- **Python not found**: Web server can't find python executable
+- **Specs not created**: Python backend crashing silently - check process logs
+- **Empty task list**: Specs directory doesn't exist or is empty
+
 ### Creating and Running Specs
 ```bash
 cd apps/backend
 
-# Create a spec interactively
-python spec_runner.py --interactive
-
-# Create spec from task description
-python spec_runner.py --task "Add user authentication"
-
-# Force complexity level (simple/standard/complex)
-python spec_runner.py --task "Fix button" --complexity simple
+# Create a spec via Claude Code slash command
+claude /spec
 
 # Run autonomous build
 python run.py --spec 001
@@ -98,7 +135,8 @@ npm run test:backend
 
 ### Spec Validation
 ```bash
-python apps/backend/validate_spec.py --spec-dir apps/backend/specs/001-feature --checkpoint all
+cd apps/backend
+python -m spec.validate_spec --spec-dir specs/001-feature --checkpoint all
 ```
 
 ### Releases
@@ -125,12 +163,12 @@ See [RELEASE.md](RELEASE.md) for detailed release process documentation.
 
 ### Core Pipeline
 
-**Spec Creation (spec_runner.py)** - Dynamic 3-8 phase pipeline based on task complexity:
+**Spec Creation (`claude /spec` → `spec/` package)** - Dynamic 3-8 phase pipeline based on task complexity:
 - SIMPLE (3 phases): Discovery → Quick Spec → Validate
 - STANDARD (6-7 phases): Discovery → Requirements → [Research] → Context → Spec → Plan → Validate
 - COMPLEX (8 phases): Full pipeline with Research and Self-Critique phases
 
-**Implementation (run.py → agent.py)** - Multi-session build:
+**Implementation (`run.py` → `agent.py`)** - Multi-session build:
 1. Planner Agent creates subtask-based implementation plan
 2. Coder Agent implements subtasks (can spawn subagents for parallel work)
 3. QA Reviewer validates acceptance criteria
@@ -138,11 +176,12 @@ See [RELEASE.md](RELEASE.md) for detailed release process documentation.
 
 ### Key Components (apps/backend/)
 
+- **cli/** - Modular CLI: `main.py` (routing), `build_commands.py`, `workspace_commands.py`, `qa_commands.py`
+- **spec/** - Spec creation pipeline: `phases/`, `pipeline/`, `validate_pkg/`
+- **memory/** - File-based session memory: `sessions.py`, `patterns.py`, `codebase_map.py`
 - **client.py** - Claude SDK client with security hooks and tool permissions
 - **security.py** + **project_analyzer.py** - Dynamic command allowlisting based on detected project stack
 - **worktree.py** - Git worktree isolation for safe feature development
-- **memory.py** - File-based session memory (primary, always-available storage)
-- **graphiti_memory.py** - Graph-based cross-session memory with semantic search
 - **graphiti_providers.py** - Multi-provider factory for Graphiti (OpenAI, Anthropic, Azure, Ollama, Google AI)
 - **graphiti_config.py** - Configuration and validation for Graphiti integration
 - **linear_updater.py** - Optional Linear integration for progress tracking
@@ -159,8 +198,11 @@ See [RELEASE.md](RELEASE.md) for detailed release process documentation.
 | spec_gatherer.md | Collects user requirements |
 | spec_researcher.md | Validates external integrations |
 | spec_writer.md | Creates spec.md document |
+| spec_quick.md | Quick spec for simple tasks |
 | spec_critic.md | Self-critique using ultrathink |
 | complexity_assessor.md | AI-based complexity assessment |
+| followup_planner.md | Plans follow-up tasks after build |
+| ideation_*.md | Discovery prompts for improvements, security, performance |
 
 ### Spec Directory Structure
 
@@ -208,12 +250,12 @@ Security profile cached in `.auto-claude-security.json`.
 
 Dual-layer memory architecture:
 
-**File-Based Memory (Primary)** - `memory.py`
+**File-Based Memory (Primary)** - `memory/` package
 - Zero dependencies, always available
 - Human-readable files in `specs/XXX/memory/`
 - Session insights, patterns, gotchas, codebase map
 
-**Graphiti Memory** - `graphiti_memory.py`
+**Graphiti Memory** - `query_memory.py` + `graphiti_*.py`
 - Graph database with semantic search (LadybugDB - embedded, no Docker)
 - Cross-session context retrieval
 - Multi-provider support:

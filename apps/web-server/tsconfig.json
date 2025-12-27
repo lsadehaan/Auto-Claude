@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["../frontend/src/shared/*"],
+      "@electron/ipc-handlers/*": ["../frontend/src/main/ipc-handlers/*"],
+      "@electron/changelog/*": ["../frontend/src/main/changelog/*"],
+      "@electron/agent/*": ["../frontend/src/main/agent/*"],
+      "electron": ["./src/electron-shim/electron.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

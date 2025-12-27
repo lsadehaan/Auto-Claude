@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Task, TaskStatus, ImplementationPlan, Subtask, TaskMetadata, ExecutionProgress, ExecutionPhase, ReviewReason, TaskDraft } from '../../shared/types';
+import { api } from '../client-api';
 
 interface TaskState {
   tasks: Task[];
@@ -176,9 +177,28 @@ export async function loadTasks(projectId: string): Promise<void> {
   store.setError(null);
 
   try {
-    const result = await window.electronAPI.getTasks(projectId);
+    // Get project path from project store
+    const { useProjectStore } = await import('./project-store');
+    const projectStore = useProjectStore.getState();
+    const project = projectStore.projects.find(p => p.id === projectId);
+
+    if (!project) {
+      store.setError('Project not found');
+      store.setLoading(false);
+      return;
+    }
+
+    const result = await api.getTasks(projectId, project.path);
     if (result.success && result.data) {
-      store.setTasks(result.data);
+      // Preserve in-memory tasks that aren't on disk yet
+      // This prevents race condition where newly created tasks get cleared
+      // before the async Python process writes them to disk
+      const existingTasks = store.tasks;
+      const loadedTaskIds = new Set(result.data.map((t: Task) => t.id));
+      const inMemoryTasks = existingTasks.filter(t => !loadedTaskIds.has(t.id));
+
+      // Merge: loaded tasks from disk + in-memory tasks not on disk yet
+      store.setTasks([...result.data, ...inMemoryTasks]);
     } else {
       store.setError(result.error || 'Failed to load tasks');
     }
@@ -201,7 +221,25 @@ export async function createTask(
   const store = useTaskStore.getState();
 
   try {
-    const result = await window.electronAPI.createTask(projectId, title, description, metadata);
+    // Get project path from project store
+    const { useProjectStore } = await import('./project-store');
+    const projectStore = useProjectStore.getState();
+    const project = projectStore.projects.find(p => p.id === projectId);
+
+    if (!project) {
+      store.setError('Project not found');
+      return null;
+    }
+
+    // Pass as a single object with all required fields
+    const result = await api.createTask({
+      projectId,
+      projectPath: project.path,
+      title,
+      description,
+      complexity: metadata?.complexity
+    });
+
     if (result.success && result.data) {
       store.addTask(result.data);
       return result.data;
@@ -219,14 +257,14 @@ export async function createTask(
  * Start a task
  */
 export function startTask(taskId: string, options?: { parallel?: boolean; workers?: number }): void {
-  window.electronAPI.startTask(taskId, options);
+  api.startTask(taskId, options);
 }
 
 /**
  * Stop a task
  */
 export function stopTask(taskId: string): void {
-  window.electronAPI.stopTask(taskId);
+  api.stopTask(taskId);
 }
 
 /**
@@ -240,7 +278,7 @@ export async function submitReview(
   const store = useTaskStore.getState();
 
   try {
-    const result = await window.electronAPI.submitReview(taskId, approved, feedback);
+    const result = await api.submitReview(taskId, approved, feedback);
     if (result.success) {
       store.updateTaskStatus(taskId, approved ? 'done' : 'in_progress');
       return true;
@@ -265,7 +303,7 @@ export async function persistTaskStatus(
     store.updateTaskStatus(taskId, status);
 
     // Persist to file
-    const result = await window.electronAPI.updateTaskStatus(taskId, status);
+    const result = await api.updateTaskStatus(taskId, status);
     if (!result.success) {
       console.error('Failed to persist task status:', result.error);
       return false;
@@ -288,7 +326,7 @@ export async function persistUpdateTask(
 
   try {
     // Call the IPC to persist changes to spec files
-    const result = await window.electronAPI.updateTask(taskId, updates);
+    const result = await api.updateTask(taskId, updates);
 
     if (result.success && result.data) {
       // Update local state with the returned task data
@@ -314,7 +352,7 @@ export async function persistUpdateTask(
  */
 export async function checkTaskRunning(taskId: string): Promise<boolean> {
   try {
-    const result = await window.electronAPI.checkTaskRunning(taskId);
+    const result = await api.checkTaskRunning(taskId);
     return result.success && result.data === true;
   } catch (error) {
     console.error('Error checking task running status:', error);
@@ -334,7 +372,7 @@ export async function recoverStuckTask(
   const store = useTaskStore.getState();
 
   try {
-    const result = await window.electronAPI.recoverStuckTask(taskId, options);
+    const result = await api.recoverStuckTask(taskId, options);
 
     if (result.success && result.data) {
       // Update local state
@@ -368,7 +406,7 @@ export async function deleteTask(
   const store = useTaskStore.getState();
 
   try {
-    const result = await window.electronAPI.deleteTask(taskId);
+    const result = await api.deleteTask(taskId);
 
     if (result.success) {
       // Remove from local state
@@ -403,7 +441,7 @@ export async function archiveTasks(
   version?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const result = await window.electronAPI.archiveTasks(projectId, taskIds, version);
+    const result = await api.archiveTasks(projectId, taskIds, version);
 
     if (result.success) {
       // Reload tasks to update the UI (archived tasks will be filtered out by default)

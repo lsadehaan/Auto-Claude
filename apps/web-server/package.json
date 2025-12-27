@@ -1,0 +1,40 @@
+{
+  "name": "auto-claude-web-server",
+  "version": "1.0.0",
+  "description": "Web server for Auto-Claude",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "dev:full": "concurrently \"npm run dev\" \"cd ../frontend && npm run web:dev\"",
+    "build": "tsup",
+    "build:tsc": "tsc",
+    "build:all": "cd ../frontend && npm run web:build && cd ../web-server && npm run build",
+    "start": "node dist/index.js",
+    "setup-password": "tsx scripts/setup-password.ts"
+  },
+  "dependencies": {
+    "@lydell/node-pty": "^1.1.0",
+    "bcrypt": "^5.1.1",
+    "chokidar": "^4.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "uuid": "^11.0.5",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.5.13",
+    "concurrently": "^9.1.0",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
