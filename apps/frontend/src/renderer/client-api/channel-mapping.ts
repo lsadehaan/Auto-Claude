@@ -33,6 +33,8 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   // ============================================================================
   'project:list': { method: 'GET', path: '/projects' },
   'project:add': { method: 'POST', path: '/projects', bodyBuilder: 'wrap' },
+  'project:create': { method: 'POST', path: '/projects/create' },
+  'project:clone': { method: 'POST', path: '/projects/clone' },
   'project:remove': { method: 'DELETE', path: '/projects/{0}', pathArgs: [0] },
   'project:updateSettings': { method: 'PUT', path: '/projects/{0}/settings', pathArgs: [0] },
   'project:initialize': { method: 'POST', path: '/projects/{0}/initialize', pathArgs: [0] },

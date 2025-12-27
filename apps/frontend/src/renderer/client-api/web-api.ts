@@ -92,6 +92,8 @@ const METHOD_TO_CHANNEL: Record<string, string> = {
   // Projects
   getProjects: 'project:list',
   addProject: 'project:add',
+  createProject: 'project:create',
+  cloneProject: 'project:clone',
   removeProject: 'project:remove',
   updateProjectSettings: 'project:updateSettings',
   initializeProject: 'project:initialize',
