@@ -162,7 +162,7 @@ class SSHKeyService {
   /**
    * Test SSH connection to GitHub
    */
-  async testGitHubConnection(): Promise<{ success: boolean; message: string }> {
+  async testGitHubConnection(): Promise<{ success: boolean; message: string; username?: string }> {
     if (!this.hasKey()) {
       return {
         success: false,
@@ -171,6 +171,16 @@ class SSHKeyService {
     }
 
     try {
+      // First, ensure GitHub is in known_hosts to avoid "Host key verification failed"
+      try {
+        execSync('ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null', {
+          stdio: 'pipe',
+          shell: '/bin/sh',
+        });
+      } catch {
+        // Ignore errors if known_hosts already has the key
+      }
+
       const sshConfig = this.getGitSSHConfig();
       const output = execSync('ssh -T git@github.com', {
         encoding: 'utf-8',
@@ -181,17 +191,21 @@ class SSHKeyService {
 
       // GitHub returns exit code 1 even on success, with message like:
       // "Hi username! You've successfully authenticated..."
+      const username = this.extractGitHubUsername(output);
       return {
         success: output.includes('successfully authenticated'),
         message: output.trim(),
+        username,
       };
     } catch (error: any) {
       // Check if the error message indicates success
-      const message = error.stderr?.toString() || error.message || '';
+      const message = error.stderr?.toString() || error.stdout?.toString() || error.message || '';
       if (message.includes('successfully authenticated')) {
+        const username = this.extractGitHubUsername(message);
         return {
           success: true,
           message: message.trim(),
+          username,
         };
       }
 
@@ -200,6 +214,15 @@ class SSHKeyService {
         message: `SSH connection failed: ${message}`,
       };
     }
+  }
+
+  /**
+   * Extract GitHub username from SSH test output
+   * Output format: "Hi username! You've successfully authenticated..."
+   */
+  private extractGitHubUsername(output: string): string | undefined {
+    const match = output.match(/Hi\s+([^!]+)!/);
+    return match ? match[1].trim() : undefined;
   }
 }
 

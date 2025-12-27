@@ -22,6 +22,7 @@ export function GitSetupStep({ onNext, onBack }: GitSetupStepProps) {
   const [copied, setCopied] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'failed'>('idle');
+  const [githubUsername, setGithubUsername] = useState<string | null>(null);
 
   const handleGenerateSSHKey = async () => {
     if (!userEmail.trim()) {
@@ -66,6 +67,7 @@ export function GitSetupStep({ onNext, onBack }: GitSetupStepProps) {
   const handleTestConnection = async () => {
     setTestingConnection(true);
     setConnectionStatus('idle');
+    setError(null);
 
     try {
       const result = await fetch('/api/settings/ssh/test-github', {
@@ -74,6 +76,9 @@ export function GitSetupStep({ onNext, onBack }: GitSetupStepProps) {
       }).then(res => res.json());
 
       setConnectionStatus(result.success ? 'success' : 'failed');
+      if (result.success && result.data?.username) {
+        setGithubUsername(result.data.username);
+      }
       if (!result.success && result.data?.message) {
         setError(result.data.message);
       }
@@ -104,11 +109,23 @@ export function GitSetupStep({ onNext, onBack }: GitSetupStepProps) {
         }),
       }).then(res => res.json());
 
-      if (result.success) {
-        onNext();
-      } else {
+      if (!result.success) {
         setError(result.error || 'Failed to save git configuration');
+        return;
       }
+
+      // Also save GitHub username to settings if available
+      if (githubUsername) {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            githubUsername: githubUsername,
+          }),
+        });
+      }
+
+      onNext();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save configuration');
     } finally {
@@ -260,7 +277,9 @@ export function GitSetupStep({ onNext, onBack }: GitSetupStepProps) {
               {connectionStatus === 'success' && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-success/10 text-success rounded">
                   <CheckCircle2 className="h-4 w-4" />
-                  <span className="text-sm font-medium">Connected</span>
+                  <span className="text-sm font-medium">
+                    Connected{githubUsername && ` as ${githubUsername}`}
+                  </span>
                 </div>
               )}
 
