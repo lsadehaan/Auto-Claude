@@ -24,6 +24,12 @@ export interface ProjectSettings {
   graphitiMcpUrl?: string;
   /** Main branch name for worktree creation (default: auto-detected or 'main') */
   mainBranch?: string;
+  /** Override global git identity for this project */
+  gitIdentityOverride?: {
+    enabled: boolean;
+    userName?: string;
+    userEmail?: string;
+  };
 }
 
 export interface NotificationSettings {

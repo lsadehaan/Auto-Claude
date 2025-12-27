@@ -16,6 +16,11 @@ interface ProjectSettings {
   mainBranch?: string;
   autoBuildModel?: string;
   parallelAgents?: number;
+  gitIdentityOverride?: {
+    enabled: boolean;
+    userName?: string;
+    userEmail?: string;
+  };
 }
 
 interface GitStatus {
@@ -231,6 +236,22 @@ async function updateProjectSettings(
   if (!success) {
     return { success: false, error: 'Project not found' };
   }
+
+  // Sync git identity override to git-config-service
+  if (body.settings.gitIdentityOverride) {
+    const override = body.settings.gitIdentityOverride;
+    if (override.enabled && override.userName && override.userEmail) {
+      // Set project-specific git config
+      gitConfigService.setProjectConfig(id, {
+        userName: override.userName,
+        userEmail: override.userEmail,
+      });
+    } else {
+      // Clear project-specific config to use global
+      gitConfigService.clearProjectConfig(id);
+    }
+  }
+
   return { success: true };
 }
 

@@ -21,6 +21,7 @@ import { AutoBuildIntegration } from './project-settings/AutoBuildIntegration';
 import { ClaudeAuthSection } from './project-settings/ClaudeAuthSection';
 import { LinearIntegrationSection } from './project-settings/LinearIntegrationSection';
 import { GitHubIntegrationSection } from './project-settings/GitHubIntegrationSection';
+import { GitIdentitySection } from './project-settings/GitIdentitySection';
 import { MemoryBackendSection } from './project-settings/MemoryBackendSection';
 import { AgentConfigSection } from './project-settings/AgentConfigSection';
 import { NotificationsSection } from './project-settings/NotificationsSection';
@@ -42,6 +43,7 @@ export function ProjectSettings({ project, open, onOpenChange }: ProjectSettings
     claude: true,
     linear: false,
     github: false,
+    gitIdentity: false,
     graphiti: false
   });
 
@@ -234,6 +236,18 @@ export function ProjectSettings({ project, open, onOpenChange }: ProjectSettings
                   onUpdateConfig={updateEnvConfig}
                   gitHubConnectionStatus={gitHubConnectionStatus}
                   isCheckingGitHub={isCheckingGitHub}
+                  projectName={project.name}
+                />
+
+                <Separator />
+
+                {/* Git Identity Section */}
+                <GitIdentitySection
+                  isExpanded={expandedSections.gitIdentity}
+                  onToggle={() => toggleSection('gitIdentity')}
+                  settings={settings}
+                  onUpdateSettings={(updates) => setSettings({ ...settings, ...updates })}
+                  projectId={project.id}
                   projectName={project.name}
                 />
 
