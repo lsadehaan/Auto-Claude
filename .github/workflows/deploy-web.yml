@@ -70,9 +70,13 @@ jobs:
             --exclude='node_modules' \
             --exclude='.venv' \
             --exclude='.auto-claude' \
+            --exclude='.env' \
+            --exclude='*.env' \
             --exclude='apps/frontend/node_modules' \
             --exclude='apps/web-server/node_modules' \
             --exclude='apps/backend/.venv' \
+            --exclude='apps/backend/.env' \
+            --exclude='apps/web-server/.env' \
             ./ /opt/auto-claude/
 
           echo "✅ Files synced to /opt/auto-claude"
