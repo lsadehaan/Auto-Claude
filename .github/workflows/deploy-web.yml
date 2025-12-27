@@ -29,8 +29,12 @@ jobs:
 
       - name: Set up Python
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
           python3 --version
+          # uv is installed in root's home, runner user needs to install it
+          if ! command -v uv &> /dev/null; then
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            export PATH="$HOME/.local/bin:$PATH"
+          fi
           uv --version
 
       - name: Install backend dependencies
