@@ -24,8 +24,20 @@ if (isElectron) {
   console.log('[API] Using Electron IPC API');
 } else {
   // Use Web HTTP/WebSocket API
-  apiInstance = createWebAPI();
-  console.log('[API] Using Web HTTP/WebSocket API');
+  try {
+    apiInstance = createWebAPI();
+    console.log('[API] Using Web HTTP/WebSocket API');
+    console.log('[API] API instance created:', !!apiInstance);
+    console.log('[API] Has getAppVersion:', !!(apiInstance as any).getAppVersion);
+    console.log('[API] Has onTaskProgress:', !!(apiInstance as any).onTaskProgress);
+  } catch (error) {
+    console.error('[API] Failed to create Web API:', error);
+    throw error;
+  }
+}
+
+if (!apiInstance) {
+  throw new Error('[API] FATAL: API instance is undefined!');
 }
 
 /**
