@@ -61,8 +61,9 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Derived state: check if at least one profile is authenticated
+  // Only consider a profile authenticated if it has an actual OAuth token
   const hasAuthenticatedProfile = claudeProfiles.some(
-    (profile) => profile.oauthToken || (profile.isDefault && profile.configDir)
+    (profile) => profile.oauthToken
   );
 
   // Reusable function to load Claude profiles
@@ -416,7 +417,7 @@ export function OAuthStep({ onNext, onBack, onSkip }: OAuthStepProps) {
                                       Active
                                     </span>
                                   )}
-                                  {(profile.oauthToken || (profile.isDefault && profile.configDir)) ? (
+                                  {profile.oauthToken ? (
                                     <span className="text-xs bg-success/20 text-success px-1.5 py-0.5 rounded flex items-center gap-1">
                                       <Check className="h-3 w-3" />
                                       Authenticated
