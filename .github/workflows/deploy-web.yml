@@ -86,4 +86,4 @@ jobs:
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Status**: $(systemctl is-active auto-claude)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🌐 Access at: http://100.112.18.81" >> $GITHUB_STEP_SUMMARY
+          echo "🌐 Access at: http://claude (or http://100.112.18.81)" >> $GITHUB_STEP_SUMMARY
