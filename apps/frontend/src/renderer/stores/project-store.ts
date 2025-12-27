@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Project, ProjectSettings, AutoBuildVersionInfo, InitializationResult } from '../../shared/types';
+import { api } from '../client-api';
 
 // localStorage keys for persisting project state (legacy - now using IPC)
 const LAST_SELECTED_PROJECT_KEY = 'lastSelectedProjectId';
@@ -224,7 +225,7 @@ function saveTabStateToMain(): void {
     };
     console.log('[ProjectStore] Saving tab state to main process:', tabState);
     try {
-      await window.electronAPI.saveTabState(tabState);
+      await api.saveTabState(tabState);
     } catch (err) {
       console.error('[ProjectStore] Failed to save tab state:', err);
     }
@@ -241,7 +242,7 @@ export async function loadProjects(): Promise<void> {
 
   try {
     // First, load tab state from main process (reliable persistence)
-    const tabStateResult = await window.electronAPI.getTabState();
+    const tabStateResult = await api.getTabState();
     console.log('[ProjectStore] Loaded tab state from main process:', tabStateResult.data);
 
     if (tabStateResult.success && tabStateResult.data) {
@@ -253,7 +254,7 @@ export async function loadProjects(): Promise<void> {
     }
 
     // Then load projects
-    const result = await window.electronAPI.getProjects();
+    const result = await api.getProjects();
     console.log('[ProjectStore] getProjects result:', {
       success: result.success,
       projectCount: result.data?.length,
@@ -329,13 +330,13 @@ export async function loadProjects(): Promise<void> {
 }
 
 /**
- * Add a new project
+ * Add a new project by path (legacy - used by Electron mode)
  */
 export async function addProject(projectPath: string): Promise<Project | null> {
   const store = useProjectStore.getState();
 
   try {
-    const result = await window.electronAPI.addProject(projectPath);
+    const result = await api.addProject(projectPath);
     if (result.success && result.data) {
       store.addProject(result.data);
       store.selectProject(result.data.id);
@@ -353,13 +354,59 @@ export async function addProject(projectPath: string): Promise<Project | null> {
 }
 
 /**
+ * Create a new project (web mode - creates in PROJECTS_DIR)
+ */
+export async function createProject(name: string, initGit: boolean = true): Promise<Project | null> {
+  const store = useProjectStore.getState();
+
+  try {
+    const result = await api.createProject(name, initGit);
+    if (result.success && result.data) {
+      store.addProject(result.data);
+      store.selectProject(result.data.id);
+      store.openProjectTab(result.data.id);
+      return result.data;
+    } else {
+      store.setError(result.error || 'Failed to create project');
+      return null;
+    }
+  } catch (error) {
+    store.setError(error instanceof Error ? error.message : 'Unknown error');
+    return null;
+  }
+}
+
+/**
+ * Clone a git repository (web mode - clones into PROJECTS_DIR)
+ */
+export async function cloneProject(gitUrl: string, name?: string): Promise<Project | null> {
+  const store = useProjectStore.getState();
+
+  try {
+    const result = await api.cloneProject(gitUrl, name);
+    if (result.success && result.data) {
+      store.addProject(result.data);
+      store.selectProject(result.data.id);
+      store.openProjectTab(result.data.id);
+      return result.data;
+    } else {
+      store.setError(result.error || 'Failed to clone project');
+      return null;
+    }
+  } catch (error) {
+    store.setError(error instanceof Error ? error.message : 'Unknown error');
+    return null;
+  }
+}
+
+/**
  * Remove a project
  */
 export async function removeProject(projectId: string): Promise<boolean> {
   const store = useProjectStore.getState();
 
   try {
-    const result = await window.electronAPI.removeProject(projectId);
+    const result = await api.removeProject(projectId);
     if (result.success) {
       store.removeProject(projectId);
       // Also close the tab if it's open
@@ -384,7 +431,7 @@ export async function updateProjectSettings(
   const store = useProjectStore.getState();
 
   try {
-    const result = await window.electronAPI.updateProjectSettings(
+    const result = await api.updateProjectSettings(
       projectId,
       settings
     );
@@ -410,7 +457,7 @@ export async function checkProjectVersion(
   projectId: string
 ): Promise<AutoBuildVersionInfo | null> {
   try {
-    const result = await window.electronAPI.checkProjectVersion(projectId);
+    const result = await api.checkProjectVersion(projectId);
     if (result.success && result.data) {
       return result.data;
     }
@@ -430,7 +477,7 @@ export async function initializeProject(
 
   try {
     console.log('[ProjectStore] initializeProject called for:', projectId);
-    const result = await window.electronAPI.initializeProject(projectId);
+    const result = await api.initializeProject(projectId);
     console.log('[ProjectStore] IPC result:', result);
 
     if (result.success && result.data) {
@@ -463,7 +510,7 @@ export async function updateProjectAutoBuild(
   const store = useProjectStore.getState();
 
   try {
-    const result = await window.electronAPI.updateProjectAutoBuild(projectId);
+    const result = await api.updateProjectAutoBuild(projectId);
     if (result.success && result.data) {
       return result.data;
     }
