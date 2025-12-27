@@ -471,6 +471,9 @@ export function createWebAPI() {
     onAutoBuildSourceUpdateProgress: stubEvent('onAutoBuildSourceUpdateProgress'),
     onDownloadProgress: stubEvent('onDownloadProgress'),
 
+    // App version
+    getAppVersion: async () => '2.7.2-web',
+
     // ========================================================================
     // Browser-native implementations
     // ========================================================================
@@ -512,17 +515,6 @@ export function createWebAPI() {
 
     // NOTE: initializeClaudeProfile is auto-generated from channel mapping
     // It calls POST /api/claude/profiles/{id}/initialize which returns requiresManualToken
-
-    // ========================================================================
-    // Stub methods to prevent crashes
-    // ========================================================================
-    getAppVersion: async () => '2.7.2-web',
-    onProactiveSwapNotification: stubEvent('onProactiveSwapNotification'),
-    onAppUpdateAvailable: stubEvent('onAppUpdateAvailable'),
-    onAppUpdateDownloaded: stubEvent('onAppUpdateDownloaded'),
-    onAppUpdateError: stubEvent('onAppUpdateError'),
-    onAppUpdateProgress: stubEvent('onAppUpdateProgress'),
-    onTaskProgress: stubEvent('onTaskProgress'),
 
     // ========================================================================
     // WebSocket management
