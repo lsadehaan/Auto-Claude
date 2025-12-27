@@ -23,6 +23,7 @@ import {
 import { OllamaModelSelector } from './OllamaModelSelector';
 import { useSettingsStore } from '../../stores/settings-store';
 import type { GraphitiEmbeddingProvider, AppSettings } from '../../../shared/types';
+import { api } from '../../client-api';
 
 interface MemoryStepProps {
   onNext: () => void;
@@ -97,7 +98,7 @@ export function MemoryStep({ onNext, onBack }: MemoryStepProps) {
     const checkInfrastructure = async () => {
       setIsCheckingInfra(true);
       try {
-        const result = await window.electronAPI.getMemoryInfrastructureStatus();
+        const result = await api.getMemoryInfrastructureStatus();
         setKuzuAvailable(result?.success && result?.data?.memory?.kuzuInstalled ? true : false);
       } catch {
         setKuzuAvailable(false);
@@ -139,6 +140,15 @@ export function MemoryStep({ onNext, onBack }: MemoryStepProps) {
     setIsSaving(true);
     setError(null);
 
+    console.log('[MemoryStep.handleSave] About to call api.saveSettings, api =', {
+      type: typeof api,
+      isUndefined: api === undefined,
+      isNull: api === null,
+      hasSaveSettings: typeof (api as any)?.saveSettings,
+      api: api,
+      windowAPI: (window as any).__claudeAPI
+    });
+
     try {
       // Save the API keys to global settings
       const settingsToSave: Record<string, string | undefined> = {};
@@ -153,7 +163,9 @@ export function MemoryStep({ onNext, onBack }: MemoryStepProps) {
         settingsToSave.ollamaBaseUrl = config.ollamaBaseUrl.trim();
       }
 
-      const result = await window.electronAPI.saveSettings(settingsToSave);
+      console.log('[MemoryStep.handleSave] Calling api.saveSettings with:', settingsToSave);
+      const result = await api.saveSettings(settingsToSave);
+      console.log('[MemoryStep.handleSave] api.saveSettings returned:', result);
 
       if (result?.success) {
         // Update local settings store

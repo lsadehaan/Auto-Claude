@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { ClaudeProfile, ClaudeProfileSettings } from '../../shared/types';
+import { api } from '../client-api';
 
 interface ClaudeProfileState {
   profiles: ClaudeProfile[];
@@ -70,8 +71,17 @@ export async function loadClaudeProfiles(): Promise<void> {
   const store = useClaudeProfileStore.getState();
   store.setLoading(true);
 
+  console.log('[loadClaudeProfiles] About to call api.getClaudeProfiles, api =', {
+    type: typeof api,
+    isUndefined: api === undefined,
+    isNull: api === null,
+    hasGetClaudeProfiles: typeof (api as any)?.getClaudeProfiles,
+    api: api,
+    windowAPI: (window as any).__claudeAPI
+  });
+
   try {
-    const result = await window.electronAPI.getClaudeProfiles();
+    const result = await api.getClaudeProfiles();
     if (result.success && result.data) {
       store.setProfiles(result.data);
     }
@@ -93,7 +103,7 @@ export async function switchTerminalToProfile(
   store.setSwitching(true);
 
   try {
-    const result = await window.electronAPI.switchClaudeProfile(terminalId, profileId);
+    const result = await api.switchClaudeProfile(terminalId, profileId);
     if (result.success) {
       store.setActiveProfile(profileId);
       return true;

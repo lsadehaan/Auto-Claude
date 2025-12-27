@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
+import { api } from '../../client-api';
 
 interface OllamaModel {
   name: string;
@@ -122,9 +123,18 @@ export function OllamaModelSelector({
     setIsLoading(true);
     setError(null);
 
+    console.log('[checkInstalledModels] About to call api.checkOllamaStatus, api =', {
+      type: typeof api,
+      isUndefined: api === undefined,
+      isNull: api === null,
+      hasCheckOllamaStatus: typeof (api as any)?.checkOllamaStatus,
+      api: api,
+      windowAPI: (window as any).__claudeAPI
+    });
+
     try {
       // Check Ollama status first
-      const statusResult = await window.electronAPI.checkOllamaStatus();
+      const statusResult = await api.checkOllamaStatus();
       if (abortSignal?.aborted) return;
 
       if (!statusResult?.success || !statusResult?.data?.running) {
@@ -136,7 +146,7 @@ export function OllamaModelSelector({
       setOllamaAvailable(true);
 
       // Get list of installed embedding models
-      const result = await window.electronAPI.listOllamaEmbeddingModels();
+      const result = await api.listOllamaEmbeddingModels();
       if (abortSignal?.aborted) return;
 
       if (result?.success && result?.data?.embedding_models) {
@@ -253,8 +263,8 @@ export function OllamaModelSelector({
 
     // Register the progress listener
     let unsubscribe: (() => void) | undefined;
-    if (window.electronAPI?.onDownloadProgress) {
-      unsubscribe = window.electronAPI.onDownloadProgress(handleProgress);
+    if (api?.onDownloadProgress) {
+      unsubscribe = api.onDownloadProgress(handleProgress);
     }
 
     return () => {
@@ -277,7 +287,7 @@ export function OllamaModelSelector({
      setError(null);
 
      try {
-       const result = await window.electronAPI.pullOllamaModel(modelName);
+       const result = await api.pullOllamaModel(modelName);
        if (result?.success) {
          // Refresh the model list
          await checkInstalledModels();
