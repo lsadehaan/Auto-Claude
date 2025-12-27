@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRoadmapStore, loadRoadmap, generateRoadmap, refreshRoadmap, stopRoadmap } from '../../stores/roadmap-store';
 import { useTaskStore } from '../../stores/task-store';
 import type { RoadmapFeature } from '../../../shared/types';
+import { api } from '../../client-api';
 
 /**
  * Hook to manage roadmap data and loading
@@ -46,7 +47,7 @@ export function useFeatureActions() {
     selectedFeature: RoadmapFeature | null,
     setSelectedFeature: (feature: RoadmapFeature | null) => void
   ) => {
-    const result = await window.electronAPI.convertFeatureToSpec(projectId, feature.id);
+    const result = await api.convertFeatureToSpec(projectId, feature.id);
     if (result.success && result.data) {
       // Add the created task to the task store so it appears in the kanban immediately
       addTask(result.data);
@@ -81,7 +82,7 @@ export function useRoadmapSave(projectId: string) {
     if (!roadmap) return;
 
     try {
-      await window.electronAPI.saveRoadmap(projectId, roadmap);
+      await api.saveRoadmap(projectId, roadmap);
     } catch (error) {
       console.error('Failed to save roadmap:', error);
     }
@@ -104,7 +105,7 @@ export function useFeatureDelete(projectId: string) {
     const roadmap = useRoadmapStore.getState().roadmap;
     if (roadmap) {
       try {
-        await window.electronAPI.saveRoadmap(projectId, roadmap);
+        await api.saveRoadmap(projectId, roadmap);
       } catch (error) {
         console.error('Failed to save roadmap after delete:', error);
       }

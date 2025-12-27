@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { LinearSyncStatus } from '../../shared/types';
+import { api } from '../client-api';
 
 export function useLinearConnection(
   projectId: string,
@@ -18,7 +19,7 @@ export function useLinearConnection(
 
       setIsCheckingLinear(true);
       try {
-        const result = await window.electronAPI.checkLinearConnection(projectId);
+        const result = await api.checkLinearConnection(projectId);
         if (result.success && result.data) {
           setLinearConnectionStatus(result.data);
         }

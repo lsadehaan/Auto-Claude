@@ -3,6 +3,7 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { terminalBufferManager } from '../../lib/terminal-buffer-manager';
+import { api } from '../../client-api';
 
 interface UseXtermOptions {
   terminalId: string;
@@ -80,7 +81,7 @@ export function useXterm({ terminalId, onCommandEnter, onResize }: UseXtermOptio
 
     // Handle terminal input
     xterm.onData((data) => {
-      window.electronAPI.sendTerminalInput(terminalId, data);
+      api.sendTerminalInput(terminalId, data);
 
       // Track commands for auto-naming
       if (data === '\r' || data === '\n') {

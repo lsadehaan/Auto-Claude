@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid';
 import type { TerminalSession } from '../../shared/types';
 import { terminalBufferManager } from '../lib/terminal-buffer-manager';
 import { debugLog, debugError } from '../../shared/utils/debug-logger';
+import { api } from '../client-api';
 
 export type TerminalStatus = 'idle' | 'running' | 'claude-active' | 'exited';
 
@@ -231,7 +232,7 @@ export async function restoreTerminalSessions(projectPath: string): Promise<void
   }
 
   try {
-    const result = await window.electronAPI.getTerminalSessions(projectPath);
+    const result = await (api as any).getTerminalSessions?.(projectPath) ?? { success: false };
     if (!result.success || !result.data || result.data.length === 0) {
       return;
     }

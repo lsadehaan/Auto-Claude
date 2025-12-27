@@ -6,6 +6,7 @@ import { TooltipProvider } from '../ui/tooltip';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
+import { api } from '../../client-api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -114,7 +115,7 @@ function TaskDetailModalContent({ open, task, onOpenChange }: { open: boolean; t
     state.setIsMerging(true);
     state.setWorkspaceError(null);
     try {
-      const result = await window.electronAPI.mergeWorktree(task.id, { noCommit: state.stageOnly });
+      const result = await api.mergeWorktree(task.id, { noCommit: state.stageOnly });
       if (result.success && result.data?.success) {
         if (state.stageOnly && result.data.staged) {
           state.setWorkspaceError(null);
@@ -137,7 +138,7 @@ function TaskDetailModalContent({ open, task, onOpenChange }: { open: boolean; t
   const handleDiscard = async () => {
     state.setIsDiscarding(true);
     state.setWorkspaceError(null);
-    const result = await window.electronAPI.discardWorktree(task.id);
+    const result = await api.discardWorktree(task.id);
     if (result.success && result.data?.success) {
       state.setShowDiscardDialog(false);
       onOpenChange(false);

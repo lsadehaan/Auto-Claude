@@ -13,6 +13,8 @@ import linearRoutes from './linear.routes.js';
 import roadmapRoutes from './roadmap.routes.js';
 import ideationRoutes from './ideation.routes.js';
 import contextRoutes from './context.routes.js';
+import memoryRoutes from './memory.routes.js';
+import ollamaRoutes from './ollama.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -96,6 +98,12 @@ export function setupRoutes(): Router {
 
   // Context routes
   router.use('/context', contextRoutes);
+
+  // Memory routes
+  router.use('/memory', memoryRoutes);
+
+  // Ollama routes
+  router.use('/ollama', ollamaRoutes);
 
   return router;
 }

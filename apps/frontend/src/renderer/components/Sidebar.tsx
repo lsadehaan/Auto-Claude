@@ -36,6 +36,7 @@ import {
   DialogTitle
 } from './ui/dialog';
 import { cn } from '../lib/utils';
+import { api } from '../client-api';
 import {
   useProjectStore,
   removeProject,
@@ -157,7 +158,7 @@ export function Sidebar({
     const checkGit = async () => {
       if (selectedProject) {
         try {
-          const result = await window.electronAPI.checkGitStatus(selectedProject.path);
+          const result = await api.checkGitStatus(selectedProject.id);
           if (result.success && result.data) {
             setGitStatus(result.data);
             // Show git setup modal if project is not a git repo or has no commits
@@ -233,7 +234,7 @@ export function Sidebar({
     // Refresh git status after initialization
     if (selectedProject) {
       try {
-        const result = await window.electronAPI.checkGitStatus(selectedProject.path);
+        const result = await api.checkGitStatus(selectedProject.id);
         if (result.success && result.data) {
           setGitStatus(result.data);
         }

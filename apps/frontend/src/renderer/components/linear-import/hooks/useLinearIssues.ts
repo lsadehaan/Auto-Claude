@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { api } from '../../../client-api';
 import type { LinearIssue } from '../types';
 
 export function useLinearIssues(
@@ -30,7 +31,7 @@ export function useLinearIssues(
       setError(null);
 
       try {
-        const result = await window.electronAPI.getLinearIssues(
+        const result = await api.getLinearIssues(
           projectId,
           selectedTeamId,
           selectedProjectId || undefined

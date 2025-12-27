@@ -4,6 +4,7 @@ import { LinearTaskImportModal } from './LinearTaskImportModal';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
+import { api } from '../client-api';
 import { updateProjectSettings, initializeProject, updateProjectAutoBuild, checkProjectVersion } from '../stores/project-store';
 import type { Project } from '../../shared/types';
 
@@ -99,7 +100,7 @@ export function ProjectSettings({ project, open, onOpenChange }: ProjectSettings
         const info = await checkProjectVersion(project.id);
         setVersionInfo(info);
         // Load env config for newly initialized project
-        const envResult = await window.electronAPI.getProjectEnv(project.id);
+        const envResult = await api.getProjectEnv(project.id);
         if (envResult.success && envResult.data) {
           setEnvConfig(envResult.data);
         }
@@ -146,7 +147,7 @@ export function ProjectSettings({ project, open, onOpenChange }: ProjectSettings
 
       // Save env config if loaded
       if (envConfig) {
-        const envResult = await window.electronAPI.updateProjectEnv(project.id, envConfig);
+        const envResult = await api.updateProjectEnv(project.id, envConfig);
         if (!envResult.success) {
           setError(envResult.error || 'Failed to save environment config');
           return;

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ProjectEnvConfig } from '../../shared/types';
+import { api } from '../client-api';
 
 export function useEnvironmentConfig(projectId: string, autoBuildPath: string | null, open: boolean) {
   const [envConfig, setEnvConfig] = useState<ProjectEnvConfig | null>(null);
@@ -14,7 +15,7 @@ export function useEnvironmentConfig(projectId: string, autoBuildPath: string | 
         setIsLoadingEnv(true);
         setEnvError(null);
         try {
-          const result = await window.electronAPI.getProjectEnv(projectId);
+          const result = await api.getProjectEnv(projectId);
           if (result.success && result.data) {
             setEnvConfig(result.data);
           } else {
@@ -42,7 +43,7 @@ export function useEnvironmentConfig(projectId: string, autoBuildPath: string | 
     setIsSavingEnv(true);
     setEnvError(null);
     try {
-      const result = await window.electronAPI.updateProjectEnv(projectId, envConfig);
+      const result = await api.updateProjectEnv(projectId, envConfig);
       if (!result.success) {
         setEnvError(result.error || 'Failed to save environment config');
         return { success: false, error: result.error };

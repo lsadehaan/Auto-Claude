@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { GitHubSyncStatus } from '../../shared/types';
+import { api } from '../client-api';
 
 export function useGitHubConnection(
   projectId: string,
@@ -19,7 +20,7 @@ export function useGitHubConnection(
 
       setIsCheckingGitHub(true);
       try {
-        const result = await window.electronAPI.checkGitHubConnection(projectId);
+        const result = await api.checkGitHubConnection(projectId);
         if (result.success && result.data) {
           setGitHubConnectionStatus(result.data);
         }

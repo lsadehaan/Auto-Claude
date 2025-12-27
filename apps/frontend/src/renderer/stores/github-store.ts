@@ -5,6 +5,7 @@ import type {
   GitHubInvestigationStatus,
   GitHubInvestigationResult
 } from '../../shared/types';
+import { api } from '../client-api';
 
 interface GitHubState {
   // Data
@@ -116,7 +117,7 @@ export async function loadGitHubIssues(projectId: string, state?: 'open' | 'clos
   store.setError(null);
 
   try {
-    const result = await window.electronAPI.getGitHubIssues(projectId, state);
+    const result = await api.getGitHubIssues(projectId, state);
     if (result.success && result.data) {
       store.setIssues(result.data);
     } else {
@@ -133,7 +134,7 @@ export async function checkGitHubConnection(projectId: string): Promise<GitHubSy
   const store = useGitHubStore.getState();
 
   try {
-    const result = await window.electronAPI.checkGitHubConnection(projectId);
+    const result = await api.checkGitHubConnection(projectId);
     if (result.success && result.data) {
       store.setSyncStatus(result.data);
       return result.data;
@@ -157,7 +158,7 @@ export function investigateGitHubIssue(projectId: string, issueNumber: number, s
   });
   store.setInvestigationResult(null);
 
-  window.electronAPI.investigateGitHubIssue(projectId, issueNumber, selectedCommentIds);
+  api.investigateGitHubIssue(projectId, issueNumber, selectedCommentIds);
 }
 
 export async function importGitHubIssues(
@@ -168,7 +169,7 @@ export async function importGitHubIssues(
   store.setLoading(true);
 
   try {
-    const result = await window.electronAPI.importGitHubIssues(projectId, issueNumbers);
+    const result = await api.importGitHubIssues(projectId, issueNumbers);
     if (result.success) {
       return true;
     } else {

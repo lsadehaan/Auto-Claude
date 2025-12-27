@@ -7,6 +7,7 @@ import type {
   RoadmapGenerationStatus,
   FeatureSource
 } from '../../shared/types';
+import { api } from '../client-api';
 
 /**
  * Migrate roadmap data to latest schema
@@ -251,7 +252,7 @@ export async function loadRoadmap(projectId: string): Promise<void> {
 
   // Query if roadmap generation is currently running for this project
   // This restores the generation status when switching back to a project
-  const statusResult = await window.electronAPI.getRoadmapStatus(projectId);
+  const statusResult = await api.getRoadmapStatus(projectId);
   if (statusResult.success && statusResult.data?.isRunning) {
     // Generation is running - restore the UI state to show progress
     // The actual progress will be updated by incoming events
@@ -269,7 +270,7 @@ export async function loadRoadmap(projectId: string): Promise<void> {
     });
   }
 
-  const result = await window.electronAPI.getRoadmap(projectId);
+  const result = await api.getRoadmap(projectId);
   if (result.success && result.data) {
     // Migrate roadmap to latest schema if needed
     const migratedRoadmap = migrateRoadmapIfNeeded(result.data);
@@ -277,7 +278,7 @@ export async function loadRoadmap(projectId: string): Promise<void> {
 
     // Save migrated roadmap if changes were made
     if (migratedRoadmap !== result.data) {
-      window.electronAPI.saveRoadmap(projectId, migratedRoadmap).catch((err) => {
+      api.saveRoadmap(projectId, migratedRoadmap).catch((err) => {
         console.error('[Roadmap] Failed to save migrated roadmap:', err);
       });
     }
@@ -309,7 +310,7 @@ export function generateRoadmap(
     progress: 0,
     message: 'Starting roadmap generation...'
   });
-  window.electronAPI.generateRoadmap(projectId, enableCompetitorAnalysis, refreshCompetitorAnalysis);
+  api.generateRoadmap(projectId, enableCompetitorAnalysis, refreshCompetitorAnalysis);
 }
 
 export function refreshRoadmap(
@@ -327,7 +328,7 @@ export function refreshRoadmap(
     progress: 0,
     message: 'Refreshing roadmap...'
   });
-  window.electronAPI.refreshRoadmap(projectId, enableCompetitorAnalysis, refreshCompetitorAnalysis);
+  api.refreshRoadmap(projectId, enableCompetitorAnalysis, refreshCompetitorAnalysis);
 }
 
 export async function stopRoadmap(projectId: string): Promise<boolean> {
@@ -346,7 +347,7 @@ export async function stopRoadmap(projectId: string): Promise<boolean> {
     message: 'Generation stopped'
   });
 
-  const result = await window.electronAPI.stopRoadmap(projectId);
+  const result = await api.stopRoadmap(projectId);
 
   // Debug logging
   if (window.DEBUG) {

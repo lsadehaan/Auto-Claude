@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle
 } from './ui/dialog';
+import { api } from '../client-api';
 import type {
   AppUpdateAvailableEvent,
   AppUpdateProgress
@@ -71,7 +72,7 @@ export function AppUpdateNotification() {
 
   // Listen for update available event
   useEffect(() => {
-    const cleanup = window.electronAPI.onAppUpdateAvailable((info) => {
+    const cleanup = api.onAppUpdateAvailable((info) => {
       setUpdateInfo(info);
       setIsOpen(true);
       setIsDownloading(false);
@@ -85,7 +86,7 @@ export function AppUpdateNotification() {
 
   // Listen for update downloaded event
   useEffect(() => {
-    const cleanup = window.electronAPI.onAppUpdateDownloaded((_info) => {
+    const cleanup = api.onAppUpdateDownloaded((_info) => {
       setIsDownloading(false);
       setIsDownloaded(true);
       setDownloadProgress(null);
@@ -96,7 +97,7 @@ export function AppUpdateNotification() {
 
   // Listen for download progress
   useEffect(() => {
-    const cleanup = window.electronAPI.onAppUpdateProgress((progress) => {
+    const cleanup = api.onAppUpdateProgress((progress) => {
       setDownloadProgress(progress);
     });
 
@@ -107,7 +108,7 @@ export function AppUpdateNotification() {
     setIsDownloading(true);
     setDownloadError(null);
     try {
-      const result = await window.electronAPI.downloadAppUpdate();
+      const result = await api.downloadAppUpdate();
       if (!result.success) {
         setDownloadError(result.error || 'Failed to download update');
         setIsDownloading(false);
@@ -120,7 +121,7 @@ export function AppUpdateNotification() {
   };
 
   const handleInstall = () => {
-    window.electronAPI.installAppUpdate();
+    api.installAppUpdate();
   };
 
   const handleDismiss = () => {

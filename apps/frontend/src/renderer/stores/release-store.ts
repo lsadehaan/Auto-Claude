@@ -5,6 +5,7 @@ import type {
   ReleaseProgress,
   CreateReleaseResult
 } from '../../shared/types';
+import { api } from '../client-api';
 
 interface ReleaseState {
   // Available versions from CHANGELOG.md
@@ -94,7 +95,7 @@ export async function loadReleaseableVersions(projectId: string): Promise<void> 
   store.setError(null);
 
   try {
-    const result = await window.electronAPI.getReleaseableVersions(projectId);
+    const result = await api.getReleaseableVersions(projectId);
     if (result.success && result.data) {
       store.setReleaseableVersions(result.data);
 
@@ -131,7 +132,7 @@ export async function runPreflightCheck(projectId: string): Promise<void> {
   store.setError(null);
 
   try {
-    const result = await window.electronAPI.runReleasePreflightCheck(projectId, version);
+    const result = await api.runReleasePreflightCheck(projectId, version);
     if (result.success && result.data) {
       store.setPreflightStatus(result.data);
     } else {
@@ -171,7 +172,7 @@ export function createRelease(projectId: string): void {
     message: 'Starting release...'
   });
 
-  window.electronAPI.createRelease({
+  api.createRelease({
     projectId,
     version,
     body: versionInfo.content,

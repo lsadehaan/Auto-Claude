@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '../../ui/button';
 import { persistTaskStatus } from '../../../stores/task-store';
 import type { Task } from '../../../../shared/types';
+import { api } from '../../../client-api';
 
 interface LoadingMessageProps {
   message?: string;
@@ -104,7 +105,7 @@ export function StagedInProjectMessage({ task, projectPath, hasWorktree = false,
 
     try {
       // Call the discard/delete worktree command
-      const result = await window.electronAPI.discardWorktree(task.id);
+      const result = await api.discardWorktree(task.id);
 
       if (!result.success) {
         setError(result.error || 'Failed to delete worktree');

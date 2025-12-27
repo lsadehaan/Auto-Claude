@@ -26,6 +26,7 @@ import {
 } from '../ui/select';
 import { useSettingsStore } from '../../stores/settings-store';
 import type { GraphitiLLMProvider, GraphitiEmbeddingProvider, AppSettings } from '../../../shared/types';
+import { api } from '../../client-api';
 
 interface GraphitiStepProps {
   onNext: () => void;
@@ -152,7 +153,7 @@ export function GraphitiStep({ onNext, onBack, onSkip }: GraphitiStepProps) {
     const checkInfrastructure = async () => {
       setIsCheckingInfra(true);
       try {
-        const result = await window.electronAPI.getMemoryInfrastructureStatus();
+        const result = await api.getMemoryInfrastructureStatus();
         setKuzuAvailable(result?.success && result?.data?.memory?.kuzuInstalled ? true : false);
       } catch {
         setKuzuAvailable(false);
@@ -241,7 +242,7 @@ export function GraphitiStep({ onNext, onBack, onSkip }: GraphitiStepProps) {
                      config.embeddingProvider === 'openai' ? config.openaiApiKey :
                      config.embeddingProvider === 'openrouter' ? config.openrouterApiKey : '';
 
-      const result = await window.electronAPI.testGraphitiConnection({
+      const result = await api.testGraphitiConnection({
         dbPath: config.dbPath || undefined,
         database: config.database || 'auto_claude_memory',
         llmProvider: config.llmProvider,
@@ -326,7 +327,7 @@ export function GraphitiStep({ onNext, onBack, onSkip }: GraphitiStepProps) {
         settingsToSave.ollamaBaseUrl = config.ollamaBaseUrl.trim();
       }
 
-      const result = await window.electronAPI.saveSettings(settingsToSave);
+      const result = await api.saveSettings(settingsToSave);
 
       if (result?.success) {
         // Update local settings store with API key settings

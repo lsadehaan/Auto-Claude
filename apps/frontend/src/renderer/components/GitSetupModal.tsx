@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle
 } from './ui/dialog';
+import { api } from '../client-api';
 import type { Project, GitStatus } from '../../shared/types';
 
 interface GitSetupModalProps {
@@ -46,7 +47,7 @@ export function GitSetupModal({
 
     try {
       // Call the backend to initialize git
-      const result = await window.electronAPI.initializeGit(project.path);
+      const result = await api.initializeGit(project.id);
 
       if (result.success) {
         setStep('success');

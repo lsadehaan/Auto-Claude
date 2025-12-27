@@ -36,6 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from './ui/alert-dialog';
+import { api } from '../client-api';
 import { useProjectStore } from '../stores/project-store';
 import { useTaskStore } from '../stores/task-store';
 import type { WorktreeListItem, WorktreeMergeResult } from '../../shared/types';
@@ -72,7 +73,7 @@ export function Worktrees({ projectId }: WorktreesProps) {
     setError(null);
 
     try {
-      const result = await window.electronAPI.listWorktrees(projectId);
+      const result = await api.listWorktrees(projectId);
       if (result.success && result.data) {
         setWorktrees(result.data.worktrees);
       } else {
@@ -107,7 +108,7 @@ export function Worktrees({ projectId }: WorktreesProps) {
 
     setIsMerging(true);
     try {
-      const result = await window.electronAPI.mergeWorktree(task.id);
+      const result = await api.mergeWorktree(task.id);
       if (result.success && result.data) {
         setMergeResult(result.data);
         if (result.data.success) {
@@ -142,7 +143,7 @@ export function Worktrees({ projectId }: WorktreesProps) {
 
     setIsDeleting(true);
     try {
-      const result = await window.electronAPI.discardWorktree(task.id);
+      const result = await api.discardWorktree(task.id);
       if (result.success) {
         // Refresh worktrees after successful delete
         await loadWorktrees();

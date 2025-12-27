@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { api } from '../client-api';
 import type {
   InsightsSession,
   InsightsSessionSummary,
@@ -200,7 +201,7 @@ export async function loadInsightsSessions(projectId: string): Promise<void> {
   store.setLoadingSessions(true);
 
   try {
-    const result = await window.electronAPI.listInsightsSessions(projectId);
+    const result = await api.listInsightsSessions(projectId);
     if (result.success && result.data) {
       store.setSessions(result.data);
     } else {
@@ -212,7 +213,7 @@ export async function loadInsightsSessions(projectId: string): Promise<void> {
 }
 
 export async function loadInsightsSession(projectId: string): Promise<void> {
-  const result = await window.electronAPI.getInsightsSession(projectId);
+  const result = await api.getInsightsSession(projectId);
   if (result.success && result.data) {
     useInsightsStore.getState().setSession(result.data);
   } else {
@@ -248,11 +249,11 @@ export function sendMessage(projectId: string, message: string, modelConfig?: In
   const configToUse = modelConfig || session?.modelConfig;
 
   // Send to main process
-  window.electronAPI.sendInsightsMessage(projectId, message, configToUse);
+  api.sendInsightsMessage(projectId, message, configToUse);
 }
 
 export async function clearSession(projectId: string): Promise<void> {
-  const result = await window.electronAPI.clearInsightsSession(projectId);
+  const result = await api.clearInsightsSession(projectId);
   if (result.success) {
     useInsightsStore.getState().clearSession();
     // Reload sessions list and current session
@@ -261,7 +262,7 @@ export async function clearSession(projectId: string): Promise<void> {
 }
 
 export async function newSession(projectId: string): Promise<void> {
-  const result = await window.electronAPI.newInsightsSession(projectId);
+  const result = await api.newInsightsSession(projectId);
   if (result.success && result.data) {
     useInsightsStore.getState().setSession(result.data);
     // Reload sessions list
@@ -270,7 +271,7 @@ export async function newSession(projectId: string): Promise<void> {
 }
 
 export async function switchSession(projectId: string, sessionId: string): Promise<void> {
-  const result = await window.electronAPI.switchInsightsSession(projectId, sessionId);
+  const result = await api.switchInsightsSession(projectId, sessionId);
   if (result.success && result.data) {
     useInsightsStore.getState().setSession(result.data);
     // Reset streaming state when switching sessions
@@ -282,7 +283,7 @@ export async function switchSession(projectId: string, sessionId: string): Promi
 }
 
 export async function deleteSession(projectId: string, sessionId: string): Promise<boolean> {
-  const result = await window.electronAPI.deleteInsightsSession(projectId, sessionId);
+  const result = await api.deleteInsightsSession(projectId, sessionId);
   if (result.success) {
     // Reload sessions list and current session
     await loadInsightsSession(projectId);
@@ -292,7 +293,7 @@ export async function deleteSession(projectId: string, sessionId: string): Promi
 }
 
 export async function renameSession(projectId: string, sessionId: string, newTitle: string): Promise<boolean> {
-  const result = await window.electronAPI.renameInsightsSession(projectId, sessionId, newTitle);
+  const result = await api.renameInsightsSession(projectId, sessionId, newTitle);
   if (result.success) {
     // Reload sessions list to reflect the change
     await loadInsightsSessions(projectId);
@@ -302,7 +303,7 @@ export async function renameSession(projectId: string, sessionId: string, newTit
 }
 
 export async function updateModelConfig(projectId: string, sessionId: string, modelConfig: InsightsModelConfig): Promise<boolean> {
-  const result = await window.electronAPI.updateInsightsModelConfig(projectId, sessionId, modelConfig);
+  const result = await api.updateInsightsModelConfig(projectId, sessionId, modelConfig);
   if (result.success) {
     // Update local session state
     const store = useInsightsStore.getState();
@@ -326,7 +327,7 @@ export async function createTaskFromSuggestion(
   description: string,
   metadata?: TaskMetadata
 ): Promise<Task | null> {
-  const result = await window.electronAPI.createTaskFromInsights(
+  const result = await api.createTaskFromInsights(
     projectId,
     title,
     description,
@@ -344,7 +345,7 @@ export function setupInsightsListeners(): () => void {
   const store = useInsightsStore.getState;
 
   // Listen for streaming chunks
-  const unsubStreamChunk = window.electronAPI.onInsightsStreamChunk(
+  const unsubStreamChunk = api.onInsightsStreamChunk(
     (_projectId, chunk: InsightsStreamChunk) => {
       switch (chunk.type) {
         case 'text':
@@ -403,12 +404,12 @@ export function setupInsightsListeners(): () => void {
   );
 
   // Listen for status updates
-  const unsubStatus = window.electronAPI.onInsightsStatus((_projectId, status) => {
+  const unsubStatus = api.onInsightsStatus((_projectId, status) => {
     store().setStatus(status);
   });
 
   // Listen for errors
-  const unsubError = window.electronAPI.onInsightsError((_projectId, error) => {
+  const unsubError = api.onInsightsError((_projectId, error) => {
     store().setStatus({
       phase: 'error',
       error

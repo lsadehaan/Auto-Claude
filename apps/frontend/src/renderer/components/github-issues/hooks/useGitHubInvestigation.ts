@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { useGitHubStore, investigateGitHubIssue } from '../../../stores/github-store';
 import { loadTasks } from '../../../stores/task-store';
 import type { GitHubIssue } from '../../../../shared/types';
+import { api } from '../../../client-api';
 
 export function useGitHubInvestigation(projectId: string | undefined) {
   const {
@@ -16,7 +17,7 @@ export function useGitHubInvestigation(projectId: string | undefined) {
   useEffect(() => {
     if (!projectId) return;
 
-    const cleanupProgress = window.electronAPI.onGitHubInvestigationProgress(
+    const cleanupProgress = api.onGitHubInvestigationProgress(
       (eventProjectId, status) => {
         if (eventProjectId === projectId) {
           setInvestigationStatus(status);
@@ -24,7 +25,7 @@ export function useGitHubInvestigation(projectId: string | undefined) {
       }
     );
 
-    const cleanupComplete = window.electronAPI.onGitHubInvestigationComplete(
+    const cleanupComplete = api.onGitHubInvestigationComplete(
       (eventProjectId, result) => {
         if (eventProjectId === projectId) {
           setInvestigationResult(result);
@@ -36,7 +37,7 @@ export function useGitHubInvestigation(projectId: string | undefined) {
       }
     );
 
-    const cleanupError = window.electronAPI.onGitHubInvestigationError(
+    const cleanupError = api.onGitHubInvestigationError(
       (eventProjectId, error) => {
         if (eventProjectId === projectId) {
           setError(error);

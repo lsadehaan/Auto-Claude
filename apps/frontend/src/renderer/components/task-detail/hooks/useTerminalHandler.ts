@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { api } from '../../../client-api';
 
 /**
  * Hook for handling terminal creation with proper error handling and loading states.
@@ -13,7 +14,7 @@ export function useTerminalHandler() {
     setError(null);
 
     try {
-      const result = await window.electronAPI.createTerminal({ id, cwd });
+      const result = await api.createTerminal({ id, cwd });
 
       if (!result.success) {
         setError(result.error || 'Failed to open terminal');

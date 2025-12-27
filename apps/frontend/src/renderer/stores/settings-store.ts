@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AppSettings } from '../../shared/types';
 import { DEFAULT_APP_SETTINGS } from '../../shared/constants';
+import { api } from '../client-api';
 
 interface SettingsState {
   settings: AppSettings;
@@ -67,7 +68,7 @@ export async function loadSettings(): Promise<void> {
   store.setLoading(true);
 
   try {
-    const result = await window.electronAPI.getSettings();
+    const result = await api.getSettings();
     if (result.success && result.data) {
       // Apply migration for onboardingCompleted flag
       const migratedSettings = migrateOnboardingCompleted(result.data);
@@ -75,7 +76,7 @@ export async function loadSettings(): Promise<void> {
 
       // If migration changed the settings, persist them
       if (migratedSettings.onboardingCompleted !== result.data.onboardingCompleted) {
-        await window.electronAPI.saveSettings({
+        await api.saveSettings({
           onboardingCompleted: migratedSettings.onboardingCompleted
         });
       }
@@ -94,7 +95,7 @@ export async function saveSettings(updates: Partial<AppSettings>): Promise<boole
   const store = useSettingsStore.getState();
 
   try {
-    const result = await window.electronAPI.saveSettings(updates);
+    const result = await api.saveSettings(updates);
     if (result.success) {
       store.updateSettings(updates);
       return true;

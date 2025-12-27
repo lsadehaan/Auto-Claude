@@ -43,6 +43,7 @@ import {
   SelectValue
 } from './ui/select';
 import { useRoadmapStore } from '../stores/roadmap-store';
+import { api } from '../client-api';
 import {
   ROADMAP_PRIORITY_LABELS
 } from '../../shared/constants';
@@ -161,7 +162,7 @@ export function AddFeatureDialog({
       const roadmap = useRoadmapStore.getState().roadmap;
       if (roadmap) {
         // Get the project ID from the roadmap
-        const result = await window.electronAPI.saveRoadmap(roadmap.projectId, roadmap);
+        const result = await api.saveRoadmap(roadmap.projectId, roadmap);
         if (!result.success) {
           throw new Error(result.error || 'Failed to save roadmap');
         }

@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { api } from '../../../client-api';
 import type { LinearProject } from '../types';
 
 export function useLinearProjects(
@@ -24,7 +25,7 @@ export function useLinearProjects(
       setError(null);
 
       try {
-        const result = await window.electronAPI.getLinearProjects(
+        const result = await api.getLinearProjects(
           projectId,
           selectedTeamId
         );

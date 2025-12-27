@@ -19,6 +19,7 @@ import {
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
+import { api } from '../client-api';
 import { useRateLimitStore } from '../stores/rate-limit-store';
 import { useClaudeProfileStore, loadClaudeProfiles } from '../stores/claude-profile-store';
 import type { SDKRateLimitInfo } from '../../shared/types';
@@ -103,7 +104,7 @@ export function SDKRateLimitModal() {
 
   const loadAutoSwitchSettings = async () => {
     try {
-      const result = await window.electronAPI.getAutoSwitchSettings();
+      const result = await api.getAutoSwitchSettings();
       if (result.success && result.data) {
         setAutoSwitchEnabled(result.data.autoSwitchOnRateLimit);
       }
@@ -115,7 +116,7 @@ export function SDKRateLimitModal() {
   const handleAutoSwitchToggle = async (enabled: boolean) => {
     setIsLoadingSettings(true);
     try {
-      await window.electronAPI.updateAutoSwitchSettings({
+      await api.updateAutoSwitchSettings({
         enabled: enabled,
         autoSwitchOnRateLimit: enabled
       });
@@ -140,7 +141,7 @@ export function SDKRateLimitModal() {
       const profileName = newProfileName.trim();
       const profileSlug = profileName.toLowerCase().replace(/\s+/g, '-');
 
-      const result = await window.electronAPI.saveClaudeProfile({
+      const result = await api.saveClaudeProfile({
         id: `profile-${Date.now()}`,
         name: profileName,
         // Use a placeholder - the backend will resolve the actual path
@@ -151,7 +152,7 @@ export function SDKRateLimitModal() {
 
       if (result.success && result.data) {
         // Initialize the profile (creates terminal and runs claude setup-token)
-        const initResult = await window.electronAPI.initializeClaudeProfile(result.data.id);
+        const initResult = await api.initializeClaudeProfile(result.data.id);
 
         if (initResult.success) {
           // Reload profiles
@@ -189,10 +190,10 @@ export function SDKRateLimitModal() {
 
     try {
       // First, set the active profile
-      await window.electronAPI.setActiveClaudeProfile(selectedProfileId);
+      await api.setActiveClaudeProfile(selectedProfileId);
 
       // Then retry the operation
-      const result = await window.electronAPI.retryWithProfile({
+      const result = await api.retryWithProfile({
         source: sdkRateLimitInfo.source,
         projectId: sdkRateLimitInfo.projectId,
         taskId: sdkRateLimitInfo.taskId,

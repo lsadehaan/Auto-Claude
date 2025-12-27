@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw, X } from 'lucide-react';
 import { Button } from './ui/button';
+import { api } from '../client-api';
 
 interface SwapNotification {
   fromProfile: string;
@@ -23,7 +24,7 @@ export function ProactiveSwapListener() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = window.electronAPI.onProactiveSwapNotification((data) => {
+    const unsubscribe = api.onProactiveSwapNotification((data) => {
       const notif: SwapNotification = {
         fromProfile: data.fromProfile.name,
         toProfile: data.toProfile.name,

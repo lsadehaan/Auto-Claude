@@ -6,6 +6,7 @@ import { calculateProgress } from '../../lib/utils';
 import { startTask, stopTask, submitReview, recoverStuckTask, deleteTask } from '../../stores/task-store';
 import { TaskEditDialog } from '../TaskEditDialog';
 import { useTaskDetail } from './hooks/useTaskDetail';
+import { api } from '../../client-api';
 import { TaskHeader } from './TaskHeader';
 import { TaskProgress } from './TaskProgress';
 import { TaskMetadata } from './TaskMetadata';
@@ -73,7 +74,7 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
     state.setWorkspaceError(null);
     try {
       console.warn('[TaskDetailPanel] Calling mergeWorktree...');
-      const result = await window.electronAPI.mergeWorktree(task.id, { noCommit: state.stageOnly });
+      const result = await api.mergeWorktree(task.id, { noCommit: state.stageOnly });
       console.warn('[TaskDetailPanel] mergeWorktree result:', JSON.stringify(result, null, 2));
       if (result.success && result.data?.success) {
         // For stage-only: don't close the panel, show success message
@@ -105,7 +106,7 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
   const handleDiscard = async () => {
     state.setIsDiscarding(true);
     state.setWorkspaceError(null);
-    const result = await window.electronAPI.discardWorktree(task.id);
+    const result = await api.discardWorktree(task.id);
     if (result.success && result.data?.success) {
       state.setShowDiscardDialog(false);
       onClose();

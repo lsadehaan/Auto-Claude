@@ -1,3 +1,4 @@
+import { api } from '../../client-api';
 import { useState, useEffect } from 'react';
 import {
   Zap,
@@ -90,12 +91,12 @@ export function IntegrationSettings({
   const loadBranches = async () => {
     setIsLoadingBranches(true);
     try {
-      const result = await window.electronAPI.getGitBranches(project.path);
+      const result = await api.getGitBranches(project.id);
       if (result.success && result.data) {
         setBranches(result.data);
         // Auto-detect main branch if not set
         if (!settings.mainBranch) {
-          const detectResult = await window.electronAPI.detectMainBranch(project.path);
+          const detectResult = await api.detectMainBranch(project.id);
           if (detectResult.success && detectResult.data) {
             setSettings(prev => ({ ...prev, mainBranch: detectResult.data! }));
           }

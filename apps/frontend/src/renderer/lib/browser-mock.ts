@@ -24,6 +24,11 @@ import {
 // Check if we're in a browser (not Electron)
 const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined;
 
+// Check if we're in web production mode (served from web server)
+// In this case, we use the real web API, not the mock
+const isWebProductionMode = typeof import.meta !== 'undefined' &&
+  (import.meta as any).env?.VITE_WEB_MODE === 'true';
+
 /**
  * Create mock electronAPI for browser
  * Aggregates all mock implementations from separate modules
@@ -112,9 +117,15 @@ const browserMockAPI: ElectronAPI = {
 };
 
 /**
- * Initialize browser mock if not running in Electron
+ * Initialize browser mock if not running in Electron and not in web production mode
  */
 export function initBrowserMock(): void {
+  // Skip mock in web production mode - use real web API instead
+  if (isWebProductionMode) {
+    console.log('[Browser Mock] Skipping - web production mode detected');
+    return;
+  }
+
   if (!isElectron) {
     console.warn('%c[Browser Mock] Initializing mock electronAPI for browser preview', 'color: #f0ad4e; font-weight: bold;');
     (window as Window & { electronAPI: ElectronAPI }).electronAPI = browserMockAPI;

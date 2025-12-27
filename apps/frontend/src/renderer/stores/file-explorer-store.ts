@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { FileNode } from '../../shared/types';
+import { api } from '../client-api';
 
 interface FileExplorerState {
   isOpen: boolean;
@@ -92,7 +93,7 @@ export const useFileExplorerStore = create<FileExplorerState>((set, get) => ({
     });
 
     try {
-      const result = await window.electronAPI.listDirectory(dirPath);
+      const result = await api.listDirectory(dirPath);
 
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to load directory');

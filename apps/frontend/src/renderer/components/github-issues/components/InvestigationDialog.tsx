@@ -14,6 +14,7 @@ import {
 } from '../../ui/dialog';
 import type { InvestigationDialogProps } from '../types';
 import { formatDate } from '../utils';
+import { api } from '../../../client-api';
 
 interface GitHubComment {
   id: number;
@@ -47,7 +48,7 @@ export function InvestigationDialog({
       setSelectedCommentIds([]);
       setFetchCommentsError(null);
 
-      window.electronAPI.getIssueComments(projectId, selectedIssue.number)
+      api.getIssueComments(projectId, selectedIssue.number)
         .then((result: { success: boolean; data?: GitHubComment[] }) => {
           if (!isMounted) return;
           if (result.success && result.data) {

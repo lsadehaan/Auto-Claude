@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from './ui/tooltip';
+import { api } from '../client-api';
 import type { ClaudeUsageSnapshot } from '../../shared/types/agent';
 
 export function UsageIndicator() {
@@ -21,13 +22,13 @@ export function UsageIndicator() {
 
   useEffect(() => {
     // Listen for usage updates from main process
-    const unsubscribe = window.electronAPI.onUsageUpdated((snapshot: ClaudeUsageSnapshot) => {
+    const unsubscribe = api.onUsageUpdated((snapshot: ClaudeUsageSnapshot) => {
       setUsage(snapshot);
       setIsVisible(true);
     });
 
     // Request initial usage on mount
-    window.electronAPI.requestUsageUpdate().then((result) => {
+    api.requestUsageUpdate().then((result) => {
       if (result.success && result.data) {
         setUsage(result.data);
         setIsVisible(true);

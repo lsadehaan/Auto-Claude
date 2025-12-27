@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useProjectStore } from '../../../stores/project-store';
 import { checkTaskRunning, isIncompleteHumanReview, getTaskProgress } from '../../../stores/task-store';
 import type { Task, TaskLogs, TaskLogPhase, WorktreeStatus, WorktreeDiff, MergeConflict, MergeStats, GitConflictInfo } from '../../../../shared/types';
+import { api } from '../../../client-api';
 
 export interface UseTaskDetailOptions {
   task: Task;
@@ -106,8 +107,8 @@ export function useTaskDetail({ task }: UseTaskDetailOptions) {
       setWorkspaceError(null);
 
       Promise.all([
-        window.electronAPI.getWorktreeStatus(task.id),
-        window.electronAPI.getWorktreeDiff(task.id)
+        api.getWorktreeStatus(task.id),
+        api.getWorktreeDiff(task.id)
       ]).then(([statusResult, diffResult]) => {
         if (statusResult.success && statusResult.data) {
           setWorktreeStatus(statusResult.data);
@@ -133,7 +134,7 @@ export function useTaskDetail({ task }: UseTaskDetailOptions) {
     const loadLogs = async () => {
       setIsLoadingLogs(true);
       try {
-        const result = await window.electronAPI.getTaskLogs(selectedProject.id, task.specId);
+        const result = await api.getTaskLogs(selectedProject.id, task.specId);
         if (result.success && result.data) {
           setPhaseLogs(result.data);
           // Auto-expand active phase
@@ -154,10 +155,10 @@ export function useTaskDetail({ task }: UseTaskDetailOptions) {
     loadLogs();
 
     // Start watching for log changes
-    window.electronAPI.watchTaskLogs(selectedProject.id, task.specId);
+    api.watchTaskLogs(selectedProject.id, task.specId);
 
     // Listen for log changes
-    const unsubscribe = window.electronAPI.onTaskLogsChanged((specId, logs) => {
+    const unsubscribe = api.onTaskLogsChanged((specId, logs) => {
       if (specId === task.specId) {
         setPhaseLogs(logs);
         // Auto-expand newly active phase
@@ -176,7 +177,7 @@ export function useTaskDetail({ task }: UseTaskDetailOptions) {
 
     return () => {
       unsubscribe();
-      window.electronAPI.unwatchTaskLogs(task.specId);
+      api.unwatchTaskLogs(task.specId);
     };
   }, [selectedProject, task.specId]);
 
@@ -216,7 +217,7 @@ export function useTaskDetail({ task }: UseTaskDetailOptions) {
     setIsLoadingPreview(true);
     try {
       console.warn('[useTaskDetail] Calling mergeWorktreePreview...');
-      const result = await window.electronAPI.mergeWorktreePreview(task.id);
+      const result = await api.mergeWorktreePreview(task.id);
       console.warn('%c[useTaskDetail] mergeWorktreePreview result:', 'color: lime; font-weight: bold;', JSON.stringify(result, null, 2));
       if (result.success && result.data?.preview) {
         const previewData = result.data.preview;

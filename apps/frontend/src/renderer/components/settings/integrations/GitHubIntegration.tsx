@@ -7,6 +7,7 @@ import { Separator } from '../../ui/separator';
 import { Button } from '../../ui/button';
 import { GitHubOAuthFlow } from '../../project-settings/GitHubOAuthFlow';
 import { PasswordInput } from '../../project-settings/PasswordInput';
+import { api } from '../../../client-api';
 import type { ProjectEnvConfig, GitHubSyncStatus } from '../../../../shared/types';
 
 // Debug logging
@@ -96,7 +97,7 @@ export function GitHubIntegration({
 
     try {
       debugLog('fetchBranches: Calling getGitBranches...');
-      const result = await window.electronAPI.getGitBranches(projectPath);
+      const result = await api.getGitBranches(projectPath);
       debugLog('fetchBranches: getGitBranches result:', { success: result.success, dataType: typeof result.data, dataLength: Array.isArray(result.data) ? result.data.length : 'N/A', error: result.error });
 
       // result.data is the array directly (not { branches: [] })
@@ -107,7 +108,7 @@ export function GitHubIntegration({
         // Auto-detect default branch if not set
         if (!envConfig?.defaultBranch) {
           debugLog('fetchBranches: No defaultBranch set, auto-detecting...');
-          const detectResult = await window.electronAPI.detectMainBranch(projectPath);
+          const detectResult = await api.detectMainBranch(projectPath);
           debugLog('fetchBranches: detectMainBranch result:', detectResult);
           if (detectResult.success && detectResult.data) {
             debugLog('fetchBranches: Auto-detected default branch:', detectResult.data);
@@ -132,7 +133,7 @@ export function GitHubIntegration({
     setReposError(null);
 
     try {
-      const result = await window.electronAPI.listGitHubUserRepos();
+      const result = await api.listGitHubUserRepos();
       debugLog('listGitHubUserRepos result:', result);
 
       if (result.success && result.data?.repos) {

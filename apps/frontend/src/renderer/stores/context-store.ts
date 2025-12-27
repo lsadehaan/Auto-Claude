@@ -6,6 +6,7 @@ import type {
   MemoryEpisode,
   ContextSearchResult
 } from '../../shared/types';
+import { api } from '../client-api';
 
 interface ContextState {
   // Project Index
@@ -106,7 +107,7 @@ export async function loadProjectContext(projectId: string): Promise<void> {
   store.setMemoryError(null);
 
   try {
-    const result = await window.electronAPI.getProjectContext(projectId);
+    const result = await api.getProjectContext(projectId);
     if (result.success && result.data) {
       store.setProjectIndex(result.data.projectIndex);
       store.setMemoryStatus(result.data.memoryStatus);
@@ -132,7 +133,7 @@ export async function refreshProjectIndex(projectId: string): Promise<void> {
   store.setIndexError(null);
 
   try {
-    const result = await window.electronAPI.refreshProjectIndex(projectId);
+    const result = await api.refreshProjectIndex(projectId);
     if (result.success && result.data) {
       store.setProjectIndex(result.data);
     } else {
@@ -163,7 +164,7 @@ export async function searchMemories(
   store.setSearchLoading(true);
 
   try {
-    const result = await window.electronAPI.searchMemories(projectId, query);
+    const result = await api.searchMemories(projectId, query);
     if (result.success && result.data) {
       store.setSearchResults(result.data);
     } else {
@@ -187,7 +188,7 @@ export async function loadRecentMemories(
   store.setMemoriesLoading(true);
 
   try {
-    const result = await window.electronAPI.getRecentMemories(projectId, limit);
+    const result = await api.getRecentMemories(projectId, limit);
     if (result.success && result.data) {
       store.setRecentMemories(result.data);
     }

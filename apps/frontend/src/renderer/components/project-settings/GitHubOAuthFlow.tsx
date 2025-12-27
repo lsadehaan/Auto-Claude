@@ -1,3 +1,4 @@
+import { api } from '../../client-api';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Github,
@@ -119,7 +120,7 @@ export function GitHubOAuthFlow({ onSuccess, onCancel }: GitHubOAuthFlowProps) {
     try {
       // Check if gh CLI is installed
       debugLog('Calling checkGitHubCli...');
-      const cliResult = await window.electronAPI.checkGitHubCli();
+      const cliResult = await api.checkGitHubCli();
       debugLog('checkGitHubCli result:', cliResult);
 
       if (!cliResult.success) {
@@ -142,7 +143,7 @@ export function GitHubOAuthFlow({ onSuccess, onCancel }: GitHubOAuthFlowProps) {
 
       // Check if already authenticated
       debugLog('Calling checkGitHubAuth...');
-      const authResult = await window.electronAPI.checkGitHubAuth();
+      const authResult = await api.checkGitHubAuth();
       debugLog('checkGitHubAuth result:', authResult);
 
       if (authResult.success && authResult.data?.authenticated) {
@@ -165,7 +166,7 @@ export function GitHubOAuthFlow({ onSuccess, onCancel }: GitHubOAuthFlowProps) {
     debugLog('fetchAndNotifyToken() called');
     try {
       debugLog('Calling getGitHubToken...');
-      const tokenResult = await window.electronAPI.getGitHubToken();
+      const tokenResult = await api.getGitHubToken();
       debugLog('getGitHubToken result:', {
         success: tokenResult.success,
         hasToken: !!tokenResult.data?.token,
@@ -209,7 +210,7 @@ export function GitHubOAuthFlow({ onSuccess, onCancel }: GitHubOAuthFlowProps) {
 
     try {
       debugLog('Calling startGitHubAuth...');
-      const result = await window.electronAPI.startGitHubAuth();
+      const result = await api.startGitHubAuth();
       debugLog('startGitHubAuth result:', result);
 
       // Clear timeout since we got a response

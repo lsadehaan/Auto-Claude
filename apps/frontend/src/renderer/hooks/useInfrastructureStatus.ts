@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { InfrastructureStatus } from '../../shared/types';
+import { api } from '../client-api';
 
 /**
  * Hook for checking memory infrastructure status (LadybugDB)
@@ -22,7 +23,7 @@ export function useInfrastructureStatus(
 
       setIsCheckingInfrastructure(true);
       try {
-        const result = await window.electronAPI.getMemoryInfrastructureStatus(dbPath);
+        const result = await api.getMemoryInfrastructureStatus(dbPath);
         if (result.success && result.data) {
           setInfrastructureStatus(result.data);
         }

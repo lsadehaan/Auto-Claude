@@ -3,6 +3,7 @@ import { Archive, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import type { ChangelogTask } from '../../../shared/types';
+import { api } from '../../client-api';
 
 interface ArchiveTasksCardProps {
   projectId: string;
@@ -25,7 +26,7 @@ export function ArchiveTasksCard({
     setIsArchiving(true);
     setArchiveError(null);
     try {
-      const result = await window.electronAPI.archiveTasks(projectId, selectedTaskIds, version);
+      const result = await api.archiveTasks(projectId, selectedTaskIds, version);
       if (result.success) {
         setArchiveSuccess(true);
       } else {

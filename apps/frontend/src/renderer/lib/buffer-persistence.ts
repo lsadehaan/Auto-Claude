@@ -8,6 +8,7 @@
 
 import { SerializeAddon } from '@xterm/addon-serialize';
 import type { Terminal } from '@xterm/xterm';
+import { api } from '../client-api';
 
 // Save interval: 30 seconds during active use
 const SAVE_INTERVAL_MS = 30_000;
@@ -113,7 +114,7 @@ class BufferPersistence {
       }
 
       // Save via IPC
-      await window.electronAPI.saveTerminalBuffer(terminalId, serialized);
+      await api.saveTerminalBuffer(terminalId, serialized);
 
       // Update last saved size
       managed.lastSavedSize = currentSize;
@@ -138,7 +139,7 @@ class BufferPersistence {
 
     try {
       const serialized = managed.serializeAddon.serialize();
-      await window.electronAPI.saveTerminalBuffer(terminalId, serialized);
+      await api.saveTerminalBuffer(terminalId, serialized);
       managed.lastSavedSize = serialized.length;
       console.warn(`[BufferPersistence] Immediate save for ${terminalId} complete`);
     } catch (error) {

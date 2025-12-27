@@ -11,6 +11,7 @@ import {
   canGenerate as canGenerateSelector
 } from '../../../stores/changelog-store';
 import { loadTasks } from '../../../stores/task-store';
+import { api } from '../../../client-api';
 
 export type WizardStep = 1 | 2 | 3;
 
@@ -122,7 +123,7 @@ export function useChangelog() {
 
   // Set up event listeners for generation
   useEffect(() => {
-    const cleanupProgress = window.electronAPI.onChangelogGenerationProgress(
+    const cleanupProgress = api.onChangelogGenerationProgress(
       (projectId, progress) => {
         if (projectId === selectedProjectId) {
           setGenerationProgress(progress);
@@ -130,7 +131,7 @@ export function useChangelog() {
       }
     );
 
-    const cleanupComplete = window.electronAPI.onChangelogGenerationComplete(
+    const cleanupComplete = api.onChangelogGenerationComplete(
       (projectId, result) => {
         if (projectId === selectedProjectId) {
           setIsGenerating(false);
@@ -148,7 +149,7 @@ export function useChangelog() {
       }
     );
 
-    const cleanupError = window.electronAPI.onChangelogGenerationError(
+    const cleanupError = api.onChangelogGenerationError(
       (projectId, errorMsg) => {
         if (projectId === selectedProjectId) {
           setIsGenerating(false);
@@ -203,7 +204,7 @@ export function useChangelog() {
         // Use different version suggestion based on source mode
         if (sourceMode === 'tasks' && selectedTaskIds.length > 0) {
           // Task-based: Use rule-based suggester
-          const result = await window.electronAPI.suggestChangelogVersion(
+          const result = await api.suggestChangelogVersion(
             selectedProjectId,
             selectedTaskIds
           );
@@ -213,7 +214,7 @@ export function useChangelog() {
           }
         } else if ((sourceMode === 'git-history' || sourceMode === 'branch-diff') && previewCommits.length > 0) {
           // Git-based: Use AI-powered suggester with commits
-          const result = await window.electronAPI.suggestChangelogVersionFromCommits(
+          const result = await api.suggestChangelogVersionFromCommits(
             selectedProjectId,
             previewCommits
           );

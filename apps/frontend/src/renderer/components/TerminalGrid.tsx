@@ -25,6 +25,7 @@ import {
 } from './ui/dropdown-menu';
 import { FileExplorerPanel } from './FileExplorerPanel';
 import { cn } from '../lib/utils';
+import { api } from '../client-api';
 import { useTerminalStore } from '../stores/terminal-store';
 import { useTaskStore } from '../stores/task-store';
 import { useFileExplorerStore } from '../stores/file-explorer-store';
@@ -67,7 +68,7 @@ export function TerminalGrid({ projectPath, onNewTaskClick, isActive = false }: 
     const fetchSessionDates = async () => {
       setIsLoadingDates(true);
       try {
-        const result = await window.electronAPI.getTerminalSessionDates(projectPath);
+        const result = await api.getTerminalSessionDates(projectPath);
         if (result.success && result.data) {
           setSessionDates(result.data);
         }
@@ -91,7 +92,7 @@ export function TerminalGrid({ projectPath, onNewTaskClick, isActive = false }: 
     setIsRestoring(true);
     try {
       // First get the session data for this date (we need it after restore)
-      const sessionsResult = await window.electronAPI.getTerminalSessionsForDate(date, projectPath);
+      const sessionsResult = await api.getTerminalSessionsForDate(date, projectPath);
       const sessionsToRestore = sessionsResult.success ? sessionsResult.data || [] : [];
 
       console.warn(`[TerminalGrid] Found ${sessionsToRestore.length} sessions to restore from ${date}`);
@@ -104,7 +105,7 @@ export function TerminalGrid({ projectPath, onNewTaskClick, isActive = false }: 
 
       // Close all existing terminals
       for (const terminal of terminals) {
-        await window.electronAPI.destroyTerminal(terminal.id);
+        await api.destroyTerminal(terminal.id);
         removeTerminal(terminal.id);
       }
 
@@ -112,7 +113,7 @@ export function TerminalGrid({ projectPath, onNewTaskClick, isActive = false }: 
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Restore sessions from the selected date (creates PTYs in main process)
-      const result = await window.electronAPI.restoreTerminalSessionsFromDate(
+      const result = await api.restoreTerminalSessionsFromDate(
         date,
         projectPath,
         80,
@@ -135,7 +136,7 @@ export function TerminalGrid({ projectPath, onNewTaskClick, isActive = false }: 
         }
 
         // Refresh session dates to update counts
-        const datesResult = await window.electronAPI.getTerminalSessionDates(projectPath);
+        const datesResult = await api.getTerminalSessionDates(projectPath);
         if (datesResult.success && datesResult.data) {
           setSessionDates(datesResult.data);
         }
@@ -164,7 +165,7 @@ export function TerminalGrid({ projectPath, onNewTaskClick, isActive = false }: 
   } | null>(null);
 
   const handleCloseTerminal = useCallback((id: string) => {
-    window.electronAPI.destroyTerminal(id);
+    api.destroyTerminal(id);
     removeTerminal(id);
   }, [removeTerminal]);
 
@@ -201,7 +202,7 @@ export function TerminalGrid({ projectPath, onNewTaskClick, isActive = false }: 
     terminals.forEach((terminal) => {
       if (terminal.status === 'running' && !terminal.isClaudeMode) {
         setClaudeMode(terminal.id, true);
-        window.electronAPI.invokeClaudeInTerminal(terminal.id, projectPath);
+        api.invokeClaudeInTerminal(terminal.id, projectPath);
       }
     });
   }, [terminals, setClaudeMode, projectPath]);
@@ -242,7 +243,7 @@ export function TerminalGrid({ projectPath, onNewTaskClick, isActive = false }: 
         // Quote the path if it contains spaces
         const quotedPath = data.path.includes(' ') ? `"${data.path}"` : data.path;
         // Insert the file path into the terminal with a trailing space
-        window.electronAPI.sendTerminalInput(terminalId, quotedPath + ' ');
+        api.sendTerminalInput(terminalId, quotedPath + ' ');
       }
     }
   }, []);

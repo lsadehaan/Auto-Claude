@@ -3,6 +3,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { api } from '../../../client-api';
 import type { LinearImportResult } from '../types';
 
 export function useLinearImport(
@@ -22,7 +23,7 @@ export function useLinearImport(
       setImportResult(null);
 
       try {
-        const result = await window.electronAPI.importLinearIssues(
+        const result = await api.importLinearIssues(
           projectId,
           Array.from(selectedIssueIds)
         );

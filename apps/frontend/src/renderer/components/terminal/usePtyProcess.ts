@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useTerminalStore } from '../../stores/terminal-store';
+import { api } from '../../client-api';
 
 interface UsePtyProcessOptions {
   terminalId: string;
@@ -37,7 +38,7 @@ export function usePtyProcess({
 
     if (isRestored && terminalState) {
       // Restored session
-      window.electronAPI.restoreTerminalSession(
+      api.restoreTerminalSession(
         {
           id: terminalState.id,
           title: terminalState.title,
@@ -68,7 +69,7 @@ export function usePtyProcess({
       });
     } else {
       // New terminal
-      window.electronAPI.createTerminal({
+      api.createTerminal({
         id: terminalId,
         cwd,
         cols,

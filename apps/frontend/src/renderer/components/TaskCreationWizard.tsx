@@ -30,6 +30,7 @@ import {
 import { TaskFileExplorerDrawer } from './TaskFileExplorerDrawer';
 import { AgentProfileSelector } from './AgentProfileSelector';
 import { FileAutocomplete } from './FileAutocomplete';
+import { api } from '../client-api';
 import { createTask, saveDraft, loadDraft, clearDraft, isDraftEmpty } from '../stores/task-store';
 import { useProjectStore } from '../stores/project-store';
 import { cn } from '../lib/utils';
@@ -188,7 +189,7 @@ export function TaskCreationWizard({
 
     setIsLoadingBranches(true);
     try {
-      const result = await window.electronAPI.getGitBranches(projectPath);
+      const result = await api.getGitBranches(projectPath);
       if (result.success && result.data) {
         setBranches(result.data);
       }
@@ -204,12 +205,12 @@ export function TaskCreationWizard({
 
     try {
       // Get env config to check if there's a configured default branch
-      const result = await window.electronAPI.getProjectEnv(projectId);
+      const result = await api.getProjectEnv(projectId);
       if (result.success && result.data?.defaultBranch) {
         setProjectDefaultBranch(result.data.defaultBranch);
       } else if (projectPath) {
         // Fall back to auto-detect
-        const detectResult = await window.electronAPI.detectMainBranch(projectPath);
+        const detectResult = await api.detectMainBranch(projectPath);
         if (detectResult.success && detectResult.data) {
           setProjectDefaultBranch(detectResult.data);
         }

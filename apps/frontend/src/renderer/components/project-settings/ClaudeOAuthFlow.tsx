@@ -1,3 +1,4 @@
+import { api } from '../../client-api';
 import { useState, useEffect, useRef } from 'react';
 import {
   Key,
@@ -37,7 +38,7 @@ export function ClaudeOAuthFlow({ onSuccess, onCancel }: ClaudeOAuthFlowProps) {
       successTimeoutRef.current = null;
     }
 
-    const unsubscribe = window.electronAPI.onTerminalOAuthToken((info) => {
+    const unsubscribe = api.onTerminalOAuthToken((info) => {
       console.warn('[ClaudeOAuth] Token event received:', {
         success: info.success,
         hasEmail: !!info.email,
@@ -82,7 +83,7 @@ export function ClaudeOAuthFlow({ onSuccess, onCancel }: ClaudeOAuthFlowProps) {
 
     try {
       // Get the active profile ID
-      const profilesResult = await window.electronAPI.getClaudeProfiles();
+      const profilesResult = await api.getClaudeProfiles();
 
       if (!profilesResult.success || !profilesResult.data) {
         throw new Error('Failed to get Claude profiles');
@@ -92,7 +93,7 @@ export function ClaudeOAuthFlow({ onSuccess, onCancel }: ClaudeOAuthFlowProps) {
       console.warn('[ClaudeOAuth] Initializing profile:', activeProfileId);
 
       // Initialize the profile - this opens a terminal and runs 'claude setup-token'
-      const result = await window.electronAPI.initializeClaudeProfile(activeProfileId);
+      const result = await api.initializeClaudeProfile(activeProfileId);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to start authentication');

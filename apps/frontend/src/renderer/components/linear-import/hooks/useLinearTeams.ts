@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { api } from '../../../client-api';
 import type { LinearTeam } from '../types';
 
 export function useLinearTeams(projectId: string, open: boolean) {
@@ -18,7 +19,7 @@ export function useLinearTeams(projectId: string, open: boolean) {
       setError(null);
 
       try {
-        const result = await window.electronAPI.getLinearTeams(projectId);
+        const result = await api.getLinearTeams(projectId);
         if (result.success && result.data) {
           setTeams(result.data);
         } else {

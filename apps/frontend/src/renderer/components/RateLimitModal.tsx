@@ -20,6 +20,7 @@ import {
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
+import { api } from '../client-api';
 import { useRateLimitStore } from '../stores/rate-limit-store';
 import { useClaudeProfileStore, loadClaudeProfiles, switchTerminalToProfile } from '../stores/claude-profile-store';
 
@@ -59,7 +60,7 @@ export function RateLimitModal() {
 
   const loadAutoSwitchSettings = async () => {
     try {
-      const result = await window.electronAPI.getAutoSwitchSettings();
+      const result = await api.getAutoSwitchSettings();
       if (result.success && result.data) {
         setAutoSwitchEnabled(result.data.autoSwitchOnRateLimit);
       }
@@ -71,7 +72,7 @@ export function RateLimitModal() {
   const handleAutoSwitchToggle = async (enabled: boolean) => {
     setIsLoadingSettings(true);
     try {
-      await window.electronAPI.updateAutoSwitchSettings({
+      await api.updateAutoSwitchSettings({
         enabled: enabled,
         autoSwitchOnRateLimit: enabled
       });
@@ -96,7 +97,7 @@ export function RateLimitModal() {
       const profileName = newProfileName.trim();
       const profileSlug = profileName.toLowerCase().replace(/\s+/g, '-');
 
-      const result = await window.electronAPI.saveClaudeProfile({
+      const result = await api.saveClaudeProfile({
         id: `profile-${Date.now()}`,
         name: profileName,
         // Use a placeholder - the backend will resolve the actual path
@@ -107,7 +108,7 @@ export function RateLimitModal() {
 
       if (result.success && result.data) {
         // Initialize the profile (creates terminal and runs claude setup-token)
-        const initResult = await window.electronAPI.initializeClaudeProfile(result.data.id);
+        const initResult = await api.initializeClaudeProfile(result.data.id);
 
         if (initResult.success) {
           // Reload profiles

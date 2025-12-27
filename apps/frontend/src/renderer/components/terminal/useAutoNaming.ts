@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useTerminalStore } from '../../stores/terminal-store';
+import { api } from '../../client-api';
 
 interface UseAutoNamingOptions {
   terminalId: string;
@@ -26,7 +27,7 @@ export function useAutoNaming({ terminalId, cwd }: UseAutoNamingOptions) {
     }
 
     try {
-      const result = await window.electronAPI.generateTerminalName(command, terminal?.cwd || cwd);
+      const result = await api.generateTerminalName(command, terminal?.cwd || cwd);
       if (result.success && result.data) {
         updateTerminal(terminalId, { title: result.data });
       }

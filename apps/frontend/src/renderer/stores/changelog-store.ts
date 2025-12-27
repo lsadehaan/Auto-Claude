@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { api } from '../client-api';
 import type {
   ChangelogTask,
   TaskSpecContent,
@@ -286,13 +287,13 @@ export async function loadChangelogData(projectId: string): Promise<void> {
     const tasks = taskStore.tasks;
 
     // Load done tasks - pass the renderer's task list to get correct status
-    const tasksResult = await window.electronAPI.getChangelogDoneTasks(projectId, tasks);
+    const tasksResult = await api.getChangelogDoneTasks(projectId, tasks);
     if (tasksResult.success && tasksResult.data) {
       store.setDoneTasks(tasksResult.data);
     }
 
     // Load existing changelog
-    const changelogResult = await window.electronAPI.readExistingChangelog(projectId);
+    const changelogResult = await api.readExistingChangelog(projectId);
     if (changelogResult.success && changelogResult.data) {
       store.setExistingChangelog(changelogResult.data);
     }
@@ -305,7 +306,7 @@ export async function loadTaskSpecs(projectId: string, taskIds: string[]): Promi
   const store = useChangelogStore.getState();
 
   try {
-    const result = await window.electronAPI.loadTaskSpecs(projectId, taskIds);
+    const result = await api.loadTaskSpecs(projectId, taskIds);
     if (result.success && result.data) {
       store.setLoadedSpecs(result.data);
     }
@@ -323,8 +324,8 @@ export async function loadGitData(projectId: string): Promise<void> {
   try {
     // Load branches and tags in parallel
     const [branchesResult, tagsResult] = await Promise.all([
-      window.electronAPI.getChangelogBranches(projectId),
-      window.electronAPI.getChangelogTags(projectId)
+      api.getChangelogBranches(projectId),
+      api.getChangelogTags(projectId)
     ]);
 
     if (branchesResult.success && branchesResult.data) {
@@ -408,7 +409,7 @@ export async function loadCommitsPreview(projectId: string): Promise<void> {
       return;
     }
 
-    const result = await window.electronAPI.getChangelogCommitsPreview(projectId, options, mode);
+    const result = await api.getChangelogCommitsPreview(projectId, options, mode);
 
     if (result.success && result.data) {
       store.setPreviewCommits(result.data);
@@ -477,12 +478,12 @@ export function generateChangelog(projectId: string): void {
   };
 
   if (store.sourceMode === 'tasks') {
-    window.electronAPI.generateChangelog({
+    api.generateChangelog({
       ...baseRequest,
       taskIds: store.selectedTaskIds
     });
   } else if (store.sourceMode === 'git-history') {
-    window.electronAPI.generateChangelog({
+    api.generateChangelog({
       ...baseRequest,
       gitHistory: {
         type: store.gitHistoryType,
@@ -497,7 +498,7 @@ export function generateChangelog(projectId: string): void {
       }
     });
   } else if (store.sourceMode === 'branch-diff') {
-    window.electronAPI.generateChangelog({
+    api.generateChangelog({
       ...baseRequest,
       branchDiff: {
         baseBranch: store.baseBranch,
@@ -519,7 +520,7 @@ export async function saveChangelog(
   }
 
   try {
-    const result = await window.electronAPI.saveChangelog({
+    const result = await api.saveChangelog({
       projectId,
       content: store.generatedChangelog,
       mode

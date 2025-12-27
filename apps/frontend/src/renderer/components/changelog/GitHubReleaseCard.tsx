@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Github, RefreshCw, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { api } from '../../client-api';
 
 interface GitHubReleaseCardProps {
   projectId: string;
@@ -24,7 +25,7 @@ export function GitHubReleaseCard({
     setIsCreatingRelease(true);
     setReleaseError(null);
     try {
-      const result = await window.electronAPI.createGitHubRelease(
+      const result = await api.createGitHubRelease(
         projectId,
         version,
         generatedChangelog

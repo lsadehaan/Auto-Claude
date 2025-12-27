@@ -3,6 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import '@xterm/xterm/css/xterm.css';
 import { FileDown } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { api } from '../client-api';
 import { useTerminalStore } from '../stores/terminal-store';
 import type { TerminalProps } from './terminal/types';
 import { TerminalHeader } from './terminal/TerminalHeader';
@@ -60,7 +61,7 @@ export function Terminal({
     onCommandEnter: handleCommandEnter,
     onResize: (cols, rows) => {
       if (isCreatedRef.current) {
-        window.electronAPI.resizeTerminal(id, cols, rows);
+        api.resizeTerminal(id, cols, rows);
       }
     },
   });
@@ -118,7 +119,7 @@ export function Terminal({
 
   const handleInvokeClaude = useCallback(() => {
     setClaudeMode(id, true);
-    window.electronAPI.invokeClaudeInTerminal(id, cwd);
+    api.invokeClaudeInTerminal(id, cwd);
   }, [id, cwd, setClaudeMode]);
 
   const handleClick = useCallback(() => {
@@ -144,7 +145,7 @@ ${selectedTask.description}
 
 Please confirm you're ready by saying: I'm ready to work on ${selectedTask.title} - Context is loaded.`;
 
-    window.electronAPI.sendTerminalInput(id, contextMessage + '\r');
+    api.sendTerminalInput(id, contextMessage + '\r');
   }, [id, tasks, setAssociatedTask, updateTerminal]);
 
   const handleClearTask = useCallback(() => {

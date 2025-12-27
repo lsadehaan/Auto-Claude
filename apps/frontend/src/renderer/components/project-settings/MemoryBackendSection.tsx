@@ -1,3 +1,4 @@
+import { api } from '../../client-api';
 import { useState, useEffect, useCallback } from 'react';
 import { Database, Globe, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { CollapsibleSection } from './CollapsibleSection';
@@ -60,7 +61,7 @@ export function MemoryBackendSection({
 
     try {
       // Check Ollama status first
-      const statusResult = await window.electronAPI.checkOllamaStatus(ollamaBaseUrl);
+      const statusResult = await api.checkOllamaStatus(ollamaBaseUrl);
       if (!statusResult.success || !statusResult.data?.running) {
         setOllamaStatus('disconnected');
         setOllamaError(statusResult.data?.message || 'Ollama is not running');
@@ -68,7 +69,7 @@ export function MemoryBackendSection({
       }
 
       // Get embedding models
-      const modelsResult = await window.electronAPI.listOllamaEmbeddingModels(ollamaBaseUrl);
+      const modelsResult = await api.listOllamaEmbeddingModels(ollamaBaseUrl);
       if (!modelsResult.success) {
         setOllamaStatus('connected');
         setOllamaError(modelsResult.error || 'Failed to list models');

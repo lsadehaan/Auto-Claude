@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useTerminalStore } from '../../stores/terminal-store';
+import { api } from '../../client-api';
 
 interface UseTerminalEventsOptions {
   terminalId: string;
@@ -18,7 +19,7 @@ export function useTerminalEvents({
 }: UseTerminalEventsOptions) {
   // Handle terminal output from main process
   useEffect(() => {
-    const cleanup = window.electronAPI.onTerminalOutput((id, data) => {
+    const cleanup = api.onTerminalOutput((id, data) => {
       if (id === terminalId) {
         useTerminalStore.getState().appendOutput(terminalId, data);
         onOutput?.(data);
@@ -30,7 +31,7 @@ export function useTerminalEvents({
 
   // Handle terminal exit
   useEffect(() => {
-    const cleanup = window.electronAPI.onTerminalExit((id, exitCode) => {
+    const cleanup = api.onTerminalExit((id, exitCode) => {
       if (id === terminalId) {
         useTerminalStore.getState().setTerminalStatus(terminalId, 'exited');
         onExit?.(exitCode);
@@ -42,7 +43,7 @@ export function useTerminalEvents({
 
   // Handle terminal title change
   useEffect(() => {
-    const cleanup = window.electronAPI.onTerminalTitleChange((id, title) => {
+    const cleanup = api.onTerminalTitleChange((id, title) => {
       if (id === terminalId) {
         useTerminalStore.getState().updateTerminal(terminalId, { title });
         onTitleChange?.(title);
@@ -54,7 +55,7 @@ export function useTerminalEvents({
 
   // Handle Claude session ID capture
   useEffect(() => {
-    const cleanup = window.electronAPI.onTerminalClaudeSession((id, sessionId) => {
+    const cleanup = api.onTerminalClaudeSession((id, sessionId) => {
       if (id === terminalId) {
         useTerminalStore.getState().setClaudeSessionId(terminalId, sessionId);
         console.warn('[Terminal] Captured Claude session ID:', sessionId);

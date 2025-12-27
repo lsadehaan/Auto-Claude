@@ -30,6 +30,7 @@ import {
   TooltipTrigger
 } from './ui/tooltip';
 import { cn } from '../lib/utils';
+import { api } from '../client-api';
 import type { ClaudeProfile } from '../../shared/types';
 
 interface EnvConfigModalProps {
@@ -82,8 +83,8 @@ export function EnvConfigModal({
       try {
         // Load both token status and Claude profiles in parallel
         const [tokenResult, profilesResult] = await Promise.all([
-          window.electronAPI.checkSourceToken(),
-          window.electronAPI.getClaudeProfiles()
+          api.checkSourceToken(),
+          api.getClaudeProfiles()
         ]);
 
         // Handle token status
@@ -126,7 +127,7 @@ export function EnvConfigModal({
   useEffect(() => {
     if (!open) return;
 
-    const cleanup = window.electronAPI.onTerminalOAuthToken(async (info) => {
+    const cleanup = api.onTerminalOAuthToken(async (info) => {
       if (info.success) {
         // Token is auto-saved to the profile by the main process
         // Just update UI state to reflect authentication success
@@ -161,7 +162,7 @@ export function EnvConfigModal({
       }
 
       // Save the token to auto-claude .env
-      const result = await window.electronAPI.updateSourceEnv({
+      const result = await api.updateSourceEnv({
         claudeOAuthToken: profile.oauthToken
       });
 
@@ -195,7 +196,7 @@ export function EnvConfigModal({
 
     try {
       // Invoke the Claude setup-token flow in terminal
-      const result = await window.electronAPI.invokeClaudeSetup(projectId);
+      const result = await api.invokeClaudeSetup(projectId);
 
       if (!result.success) {
         setError(result.error || 'Failed to start authentication');
@@ -218,7 +219,7 @@ export function EnvConfigModal({
     setError(null);
 
     try {
-      const result = await window.electronAPI.updateSourceEnv({
+      const result = await api.updateSourceEnv({
         claudeOAuthToken: token.trim()
       });
 
@@ -603,7 +604,7 @@ export function useClaudeTokenCheck() {
     setError(null);
 
     try {
-      const result = await window.electronAPI.checkSourceToken();
+      const result = await api.checkSourceToken();
       if (result.success && result.data) {
         setHasToken(result.data.hasToken);
       } else {

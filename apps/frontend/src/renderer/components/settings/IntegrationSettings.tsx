@@ -27,6 +27,7 @@ import { Switch } from '../ui/switch';
 import { cn } from '../../lib/utils';
 import { SettingsSection } from './SettingsSection';
 import { loadClaudeProfiles as loadGlobalClaudeProfiles } from '../../stores/claude-profile-store';
+import { api } from '../../client-api';
 import type { AppSettings, ClaudeProfile, ClaudeAutoSwitchSettings } from '../../../shared/types';
 
 interface IntegrationSettingsProps {
@@ -74,7 +75,7 @@ export function IntegrationSettings({ settings, onSettingsChange, isOpen }: Inte
 
   // Listen for OAuth authentication completion
   useEffect(() => {
-    const unsubscribe = window.electronAPI.onTerminalOAuthToken(async (info) => {
+    const unsubscribe = api.onTerminalOAuthToken(async (info) => {
       if (info.success && info.profileId) {
         // Reload profiles to show updated state
         await loadClaudeProfiles();
@@ -89,7 +90,7 @@ export function IntegrationSettings({ settings, onSettingsChange, isOpen }: Inte
   const loadClaudeProfiles = async () => {
     setIsLoadingProfiles(true);
     try {
-      const result = await window.electronAPI.getClaudeProfiles();
+      const result = await api.getClaudeProfiles();
       if (result.success && result.data) {
         setClaudeProfiles(result.data.profiles);
         setActiveProfileId(result.data.activeProfileId);
@@ -111,7 +112,7 @@ export function IntegrationSettings({ settings, onSettingsChange, isOpen }: Inte
       const profileName = newProfileName.trim();
       const profileSlug = profileName.toLowerCase().replace(/\s+/g, '-');
 
-      const result = await window.electronAPI.saveClaudeProfile({
+      const result = await api.saveClaudeProfile({
         id: `profile-${Date.now()}`,
         name: profileName,
         configDir: `~/.claude-profiles/${profileSlug}`,
@@ -121,7 +122,7 @@ export function IntegrationSettings({ settings, onSettingsChange, isOpen }: Inte
 
       if (result.success && result.data) {
         // Initialize the profile
-        const initResult = await window.electronAPI.initializeClaudeProfile(result.data.id);
+        const initResult = await api.initializeClaudeProfile(result.data.id);
 
         if (initResult.success) {
           await loadClaudeProfiles();
@@ -148,7 +149,7 @@ export function IntegrationSettings({ settings, onSettingsChange, isOpen }: Inte
   const handleDeleteProfile = async (profileId: string) => {
     setDeletingProfileId(profileId);
     try {
-      const result = await window.electronAPI.deleteClaudeProfile(profileId);
+      const result = await api.deleteClaudeProfile(profileId);
       if (result.success) {
         await loadClaudeProfiles();
       }
@@ -173,7 +174,7 @@ export function IntegrationSettings({ settings, onSettingsChange, isOpen }: Inte
     if (!editingProfileId || !editingProfileName.trim()) return;
 
     try {
-      const result = await window.electronAPI.renameClaudeProfile(editingProfileId, editingProfileName.trim());
+      const result = await api.renameClaudeProfile(editingProfileId, editingProfileName.trim());
       if (result.success) {
         await loadClaudeProfiles();
       }
@@ -187,7 +188,7 @@ export function IntegrationSettings({ settings, onSettingsChange, isOpen }: Inte
 
   const handleSetActiveProfile = async (profileId: string) => {
     try {
-      const result = await window.electronAPI.setActiveClaudeProfile(profileId);
+      const result = await api.setActiveClaudeProfile(profileId);
       if (result.success) {
         setActiveProfileId(profileId);
         await loadGlobalClaudeProfiles();
@@ -200,7 +201,7 @@ export function IntegrationSettings({ settings, onSettingsChange, isOpen }: Inte
   const handleAuthenticateProfile = async (profileId: string) => {
     setAuthenticatingProfileId(profileId);
     try {
-      const initResult = await window.electronAPI.initializeClaudeProfile(profileId);
+      const initResult = await api.initializeClaudeProfile(profileId);
       if (initResult.success) {
         alert(
           `Authenticating profile...\n\n` +
@@ -237,7 +238,7 @@ export function IntegrationSettings({ settings, onSettingsChange, isOpen }: Inte
 
     setSavingTokenProfileId(profileId);
     try {
-      const result = await window.electronAPI.setClaudeProfileToken(
+      const result = await api.setClaudeProfileToken(
         profileId,
         manualToken.trim(),
         manualTokenEmail.trim() || undefined
@@ -263,7 +264,7 @@ export function IntegrationSettings({ settings, onSettingsChange, isOpen }: Inte
   const loadAutoSwitchSettings = async () => {
     setIsLoadingAutoSwitch(true);
     try {
-      const result = await window.electronAPI.getAutoSwitchSettings();
+      const result = await api.getAutoSwitchSettings();
       if (result.success && result.data) {
         setAutoSwitchSettings(result.data);
       }
@@ -278,7 +279,7 @@ export function IntegrationSettings({ settings, onSettingsChange, isOpen }: Inte
   const handleUpdateAutoSwitch = async (updates: Partial<ClaudeAutoSwitchSettings>) => {
     setIsLoadingAutoSwitch(true);
     try {
-      const result = await window.electronAPI.updateAutoSwitchSettings(updates);
+      const result = await api.updateAutoSwitchSettings(updates);
       if (result.success) {
         await loadAutoSwitchSettings();
       } else {

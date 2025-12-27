@@ -8,6 +8,7 @@ import type {
   IdeationConfig,
   IdeationSummary
 } from '../../shared/types';
+import { api } from '../client-api';
 import { DEFAULT_IDEATION_CONFIG } from '../../shared/constants';
 
 const GENERATION_TIMEOUT_MS = 5 * 60 * 1000;
@@ -353,7 +354,7 @@ export async function loadIdeation(projectId: string): Promise<void> {
     return;
   }
 
-  const result = await window.electronAPI.getIdeation(projectId);
+  const result = await api.getIdeation(projectId);
 
   // Check again after async operation to handle race condition
   if (useIdeationStore.getState().isGenerating) {
@@ -414,7 +415,7 @@ export function generateIdeation(projectId: string): void {
   }, GENERATION_TIMEOUT_MS);
   generationTimeoutIds.set(projectId, timeoutId);
 
-  window.electronAPI.generateIdeation(projectId, config);
+  api.generateIdeation(projectId, config);
 }
 
 export async function stopIdeation(projectId: string): Promise<boolean> {
@@ -433,7 +434,7 @@ export async function stopIdeation(projectId: string): Promise<boolean> {
     message: 'Generation stopped'
   });
 
-  const result = await window.electronAPI.stopIdeation(projectId);
+  const result = await api.stopIdeation(projectId);
 
   // Debug logging
   if (window.DEBUG) {
@@ -454,7 +455,7 @@ export async function refreshIdeation(projectId: string): Promise<void> {
   const store = useIdeationStore.getState();
   const config = store.config;
 
-  await window.electronAPI.stopIdeation(projectId);
+  await api.stopIdeation(projectId);
 
   store.clearLogs();
   store.clearSession();
@@ -466,12 +467,12 @@ export async function refreshIdeation(projectId: string): Promise<void> {
     progress: 0,
     message: `Refreshing ${config.enabledTypes.length} ideation types in parallel...`
   });
-  window.electronAPI.refreshIdeation(projectId, config);
+  api.refreshIdeation(projectId, config);
 }
 
 export async function dismissAllIdeasForProject(projectId: string): Promise<boolean> {
   const store = useIdeationStore.getState();
-  const result = await window.electronAPI.dismissAllIdeas(projectId);
+  const result = await api.dismissAllIdeas(projectId);
   if (result.success) {
     store.dismissAllIdeas();
     store.addLog('All ideas dismissed');
@@ -481,7 +482,7 @@ export async function dismissAllIdeasForProject(projectId: string): Promise<bool
 
 export async function archiveIdeaForProject(projectId: string, ideaId: string): Promise<boolean> {
   const store = useIdeationStore.getState();
-  const result = await window.electronAPI.archiveIdea(projectId, ideaId);
+  const result = await api.archiveIdea(projectId, ideaId);
   if (result.success) {
     store.archiveIdea(ideaId);
     store.addLog('Idea archived');
@@ -491,7 +492,7 @@ export async function archiveIdeaForProject(projectId: string, ideaId: string): 
 
 export async function deleteIdeaForProject(projectId: string, ideaId: string): Promise<boolean> {
   const store = useIdeationStore.getState();
-  const result = await window.electronAPI.deleteIdea(projectId, ideaId);
+  const result = await api.deleteIdea(projectId, ideaId);
   if (result.success) {
     store.deleteIdea(ideaId);
     store.addLog('Idea deleted');
@@ -501,7 +502,7 @@ export async function deleteIdeaForProject(projectId: string, ideaId: string): P
 
 export async function deleteMultipleIdeasForProject(projectId: string, ideaIds: string[]): Promise<boolean> {
   const store = useIdeationStore.getState();
-  const result = await window.electronAPI.deleteMultipleIdeas(projectId, ideaIds);
+  const result = await api.deleteMultipleIdeas(projectId, ideaIds);
   if (result.success) {
     store.deleteMultipleIdeas(ideaIds);
     store.clearSelection();
@@ -540,7 +541,7 @@ export function appendIdeation(projectId: string, typesToAdd: IdeationType[]): v
     enabledTypes: typesToAdd,
     append: true
   };
-  window.electronAPI.generateIdeation(projectId, appendConfig);
+  api.generateIdeation(projectId, appendConfig);
 }
 
 // Selectors
@@ -615,7 +616,7 @@ export function setupIdeationListeners(): () => void {
   const store = useIdeationStore.getState;
 
   // Listen for progress updates
-  const unsubProgress = window.electronAPI.onIdeationProgress((_projectId, status) => {
+  const unsubProgress = api.onIdeationProgress((_projectId, status) => {
     // Debug logging
     if (window.DEBUG) {
       console.log('[Ideation] Progress update:', {
@@ -629,12 +630,12 @@ export function setupIdeationListeners(): () => void {
   });
 
   // Listen for log messages
-  const unsubLog = window.electronAPI.onIdeationLog((_projectId, log) => {
+  const unsubLog = api.onIdeationLog((_projectId, log) => {
     store().addLog(log);
   });
 
   // Listen for individual ideation type completion (streaming)
-  const unsubTypeComplete = window.electronAPI.onIdeationTypeComplete(
+  const unsubTypeComplete = api.onIdeationTypeComplete(
     (_projectId, ideationType, ideas) => {
       // Debug logging
       if (window.DEBUG) {
@@ -669,7 +670,7 @@ export function setupIdeationListeners(): () => void {
   );
 
   // Listen for individual ideation type failure
-  const unsubTypeFailed = window.electronAPI.onIdeationTypeFailed(
+  const unsubTypeFailed = api.onIdeationTypeFailed(
     (_projectId, ideationType) => {
       // Debug logging
       if (window.DEBUG) {
@@ -681,7 +682,7 @@ export function setupIdeationListeners(): () => void {
     }
   );
 
-  const unsubComplete = window.electronAPI.onIdeationComplete((_projectId, session) => {
+  const unsubComplete = api.onIdeationComplete((_projectId, session) => {
     if (window.DEBUG) {
       console.log('[Ideation] Generation complete:', {
         projectId: _projectId,
@@ -706,7 +707,7 @@ export function setupIdeationListeners(): () => void {
     store().addLog('Ideation generation complete!');
   });
 
-  const unsubError = window.electronAPI.onIdeationError((_projectId, error) => {
+  const unsubError = api.onIdeationError((_projectId, error) => {
     if (window.DEBUG) {
       console.error('[Ideation] Error received:', { projectId: _projectId, error });
     }
@@ -724,7 +725,7 @@ export function setupIdeationListeners(): () => void {
     store().addLog(`Error: ${error}`);
   });
 
-  const unsubStopped = window.electronAPI.onIdeationStopped((_projectId) => {
+  const unsubStopped = api.onIdeationStopped((_projectId) => {
     if (window.DEBUG) {
       console.log('[Ideation] Stopped:', { projectId: _projectId });
     }

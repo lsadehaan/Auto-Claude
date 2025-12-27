@@ -1,3 +1,4 @@
+import { api } from '../../../client-api';
 import { useState, useEffect } from 'react';
 import {
   updateProjectSettings,
@@ -143,7 +144,7 @@ export function useProjectSettings(
         setIsLoadingEnv(true);
         setEnvError(null);
         try {
-          const result = await window.electronAPI.getProjectEnv(project.id);
+          const result = await api.getProjectEnv(project.id);
           if (result.success && result.data) {
             setEnvConfig(result.data);
           } else {
@@ -165,7 +166,7 @@ export function useProjectSettings(
       if (open && project.autoBuildPath) {
         setIsCheckingClaudeAuth(true);
         try {
-          const result = await window.electronAPI.checkClaudeAuth(project.id);
+          const result = await api.checkClaudeAuth(project.id);
           if (result.success && result.data) {
             setClaudeAuthStatus(result.data.authenticated ? 'authenticated' : 'not_authenticated');
           } else {
@@ -191,7 +192,7 @@ export function useProjectSettings(
 
       setIsCheckingLinear(true);
       try {
-        const result = await window.electronAPI.checkLinearConnection(project.id);
+        const result = await api.checkLinearConnection(project.id);
         if (result.success && result.data) {
           setLinearConnectionStatus(result.data);
         }
@@ -248,7 +249,7 @@ export function useProjectSettings(
       if (result?.success) {
         const info = await checkProjectVersion(project.id);
         setVersionInfo(info);
-        const envResult = await window.electronAPI.getProjectEnv(project.id);
+        const envResult = await api.getProjectEnv(project.id);
         if (envResult.success && envResult.data) {
           setEnvConfig(envResult.data);
         }
@@ -286,7 +287,7 @@ export function useProjectSettings(
     setIsSavingEnv(true);
     setEnvError(null);
     try {
-      const result = await window.electronAPI.updateProjectEnv(project.id, envConfig);
+      const result = await api.updateProjectEnv(project.id, envConfig);
       if (!result.success) {
         setEnvError(result.error || 'Failed to save environment config');
       }
@@ -300,10 +301,10 @@ export function useProjectSettings(
   const handleClaudeSetup = async () => {
     setIsCheckingClaudeAuth(true);
     try {
-      const result = await window.electronAPI.invokeClaudeSetup(project.id);
+      const result = await api.invokeClaudeSetup(project.id);
       if (result.success && result.data?.authenticated) {
         setClaudeAuthStatus('authenticated');
-        const envResult = await window.electronAPI.getProjectEnv(project.id);
+        const envResult = await api.getProjectEnv(project.id);
         if (envResult.success && envResult.data) {
           setEnvConfig(envResult.data);
         }
@@ -327,7 +328,7 @@ export function useProjectSettings(
       }
 
       if (envConfig) {
-        const envResult = await window.electronAPI.updateProjectEnv(project.id, envConfig);
+        const envResult = await api.updateProjectEnv(project.id, envConfig);
         if (!envResult.success) {
           setError(envResult.error || 'Failed to save environment config');
           return;
@@ -348,7 +349,7 @@ export function useProjectSettings(
 
       // Save to backend FIRST so disk is updated before effects run
       try {
-        const result = await window.electronAPI.updateProjectEnv(project.id, newConfig);
+        const result = await api.updateProjectEnv(project.id, newConfig);
         if (!result.success) {
           console.error('[useProjectSettings] Failed to auto-save env config:', result.error);
         }

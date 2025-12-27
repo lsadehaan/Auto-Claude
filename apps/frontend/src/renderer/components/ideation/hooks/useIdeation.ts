@@ -18,6 +18,7 @@ import { loadTasks } from '../../../stores/task-store';
 import { useClaudeTokenCheck } from '../../EnvConfigModal';
 import type { Idea, IdeationType } from '../../../../shared/types';
 import { ALL_IDEATION_TYPES } from '../constants';
+import { api } from '../../../client-api';
 
 interface UseIdeationOptions {
   onGoToTask?: (taskId: string) => void;
@@ -122,7 +123,7 @@ export function useIdeation(projectId: string, options: UseIdeationOptions = {})
   };
 
   const handleConvertToTask = async (idea: Idea) => {
-    const result = await window.electronAPI.convertIdeaToTask(projectId, idea.id);
+    const result = await api.convertIdeaToTask(projectId, idea.id);
     if (result.success && result.data) {
       // Store the taskId on the idea so we can navigate to it later
       useIdeationStore.getState().setIdeaTaskId(idea.id, result.data.id);
@@ -140,7 +141,7 @@ export function useIdeation(projectId: string, options: UseIdeationOptions = {})
   );
 
   const handleDismiss = async (idea: Idea) => {
-    const result = await window.electronAPI.dismissIdea(projectId, idea.id);
+    const result = await api.dismissIdea(projectId, idea.id);
     if (result.success) {
       useIdeationStore.getState().dismissIdea(idea.id);
     }

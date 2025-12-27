@@ -5,6 +5,7 @@ import { Textarea } from '../ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { api } from '../../client-api';
 
 // Component for loading local images via IPC
 interface LocalImageProps {
@@ -40,7 +41,7 @@ function LocalImage({ src, alt, projectPath }: LocalImageProps) {
         setError(null);
         // Handle relative paths like .github/assets/... or ./path/to/image
         const relativePath = src.startsWith('./') ? src.slice(2) : src;
-        const result = await window.electronAPI.readLocalImage(projectPath, relativePath);
+        const result = await api.readLocalImage(projectPath, relativePath);
         if (result.success && result.data) {
           setImageSrc(result.data);
         } else {

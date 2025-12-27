@@ -16,6 +16,7 @@ import { Switch } from '../ui/switch';
 import { Progress } from '../ui/progress';
 import { cn } from '../../lib/utils';
 import { SettingsSection } from './SettingsSection';
+import { api } from '../../client-api';
 import type {
   AppSettings,
   AutoBuildSourceUpdateCheck,
@@ -105,7 +106,7 @@ export function AdvancedSettings({ settings, onSettingsChange, section, version 
 
   // Listen for source download progress
   useEffect(() => {
-    const cleanup = window.electronAPI.onAutoBuildSourceUpdateProgress((progress) => {
+    const cleanup = api.onAutoBuildSourceUpdateProgress((progress) => {
       setDownloadProgress(progress);
       if (progress.stage === 'complete') {
         setIsDownloadingUpdate(false);
@@ -124,19 +125,19 @@ export function AdvancedSettings({ settings, onSettingsChange, section, version 
 
   // Listen for app update events
   useEffect(() => {
-    const cleanupAvailable = window.electronAPI.onAppUpdateAvailable((info) => {
+    const cleanupAvailable = api.onAppUpdateAvailable((info) => {
       setAppUpdateInfo(info);
       setIsCheckingAppUpdate(false);
     });
 
-    const cleanupDownloaded = window.electronAPI.onAppUpdateDownloaded((info) => {
+    const cleanupDownloaded = api.onAppUpdateDownloaded((info) => {
       setAppUpdateInfo(info);
       setIsDownloadingAppUpdate(false);
       setIsAppUpdateDownloaded(true);
       setAppDownloadProgress(null);
     });
 
-    const cleanupProgress = window.electronAPI.onAppUpdateProgress((progress) => {
+    const cleanupProgress = api.onAppUpdateProgress((progress) => {
       setAppDownloadProgress(progress);
     });
 
@@ -150,7 +151,7 @@ export function AdvancedSettings({ settings, onSettingsChange, section, version 
   const checkForAppUpdates = async () => {
     setIsCheckingAppUpdate(true);
     try {
-      const result = await window.electronAPI.checkAppUpdate();
+      const result = await api.checkAppUpdate();
       if (result.success && result.data) {
         setAppUpdateInfo(result.data);
       } else {
@@ -167,7 +168,7 @@ export function AdvancedSettings({ settings, onSettingsChange, section, version 
   const handleDownloadAppUpdate = async () => {
     setIsDownloadingAppUpdate(true);
     try {
-      await window.electronAPI.downloadAppUpdate();
+      await api.downloadAppUpdate();
     } catch (err) {
       console.error('Failed to download app update:', err);
       setIsDownloadingAppUpdate(false);
@@ -175,14 +176,14 @@ export function AdvancedSettings({ settings, onSettingsChange, section, version 
   };
 
   const handleInstallAppUpdate = () => {
-    window.electronAPI.installAppUpdate();
+    api.installAppUpdate();
   };
 
   const checkForSourceUpdates = async () => {
     console.log('[AdvancedSettings] Checking for source updates...');
     setIsCheckingSourceUpdate(true);
     try {
-      const result = await window.electronAPI.checkAutoBuildSourceUpdate();
+      const result = await api.checkAutoBuildSourceUpdate();
       console.log('[AdvancedSettings] Check result:', result);
       if (result.success && result.data) {
         setSourceUpdateCheck(result.data);
@@ -201,7 +202,7 @@ export function AdvancedSettings({ settings, onSettingsChange, section, version 
   const handleDownloadSourceUpdate = () => {
     setIsDownloadingUpdate(true);
     setDownloadProgress(null);
-    window.electronAPI.downloadAutoBuildSourceUpdate();
+    api.downloadAutoBuildSourceUpdate();
   };
 
   if (section === 'updates') {
@@ -353,7 +354,7 @@ export function AdvancedSettings({ settings, onSettingsChange, section, version 
 
                     {sourceUpdateCheck.releaseUrl && (
                       <button
-                        onClick={() => window.electronAPI.openExternal(sourceUpdateCheck.releaseUrl!)}
+                        onClick={() => api.openExternal(sourceUpdateCheck.releaseUrl!)}
                         className="inline-flex items-center gap-1.5 text-sm text-info hover:text-info/80 hover:underline transition-colors"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />

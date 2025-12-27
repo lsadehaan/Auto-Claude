@@ -316,6 +316,46 @@ router.get('/', adaptHandler(listProjects, argExtractors.none));
 // Add/create a project
 router.post('/', adaptHandler(addProject, argExtractors.bodyAsObject));
 
+// Create a new project (web-specific endpoint)
+router.post('/create', adaptHandler(
+  async (body: { name: string; initGit?: boolean }): Promise<IPCResult<ExtendedProject>> => {
+    try {
+      if (!body.name || !body.name.trim()) {
+        return { success: false, error: 'Project name is required' };
+      }
+
+      const project = projectService.createProject(body.name.trim(), body.initGit !== false);
+      return { success: true, data: toExtendedProject(project) };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create project'
+      };
+    }
+  },
+  argExtractors.bodyAsObject
+));
+
+// Clone a project from Git (web-specific endpoint)
+router.post('/clone', adaptHandler(
+  async (body: { gitUrl: string; name?: string }): Promise<IPCResult<ExtendedProject>> => {
+    try {
+      if (!body.gitUrl || !body.gitUrl.trim()) {
+        return { success: false, error: 'Git URL is required' };
+      }
+
+      const project = projectService.cloneProject(body.gitUrl.trim(), body.name?.trim());
+      return { success: true, data: toExtendedProject(project) };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to clone repository'
+      };
+    }
+  },
+  argExtractors.bodyAsObject
+));
+
 // Get a specific project
 router.get('/:id', adaptHandler(
   async (id: string) => getProject(id),

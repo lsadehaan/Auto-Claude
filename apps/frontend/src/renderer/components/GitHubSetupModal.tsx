@@ -36,6 +36,7 @@ import {
 } from './ui/select';
 import { GitHubOAuthFlow } from './project-settings/GitHubOAuthFlow';
 import { ClaudeOAuthFlow } from './project-settings/ClaudeOAuthFlow';
+import { api } from '../client-api';
 import type { Project, ProjectSettings } from '../../shared/types';
 
 interface GitHubSetupModalProps {
@@ -116,11 +117,11 @@ export function GitHubSetupModal({
       const checkExistingAuth = async () => {
         try {
           // Check for existing GitHub token
-          const ghTokenResult = await window.electronAPI.getGitHubToken();
+          const ghTokenResult = await api.getGitHubToken();
           const hasGitHubAuth = ghTokenResult.success && ghTokenResult.data?.token;
 
           // Check for existing Claude authentication
-          const profilesResult = await window.electronAPI.getClaudeProfiles();
+          const profilesResult = await api.getClaudeProfiles();
           let hasClaudeAuth = false;
           if (profilesResult.success && profilesResult.data) {
             const activeProfile = profilesResult.data.profiles.find(
@@ -160,14 +161,14 @@ export function GitHubSetupModal({
     setIsLoadingOrgs(true);
     try {
       // Get current user
-      const userResult = await window.electronAPI.getGitHubUser();
+      const userResult = await api.getGitHubUser();
       if (userResult.success && userResult.data) {
         setGithubUsername(userResult.data.username);
         setSelectedOwner(userResult.data.username); // Default to personal account
       }
 
       // Get organizations
-      const orgsResult = await window.electronAPI.listGitHubOrgs();
+      const orgsResult = await api.listGitHubOrgs();
       if (orgsResult.success && orgsResult.data) {
         setOrganizations(orgsResult.data.orgs);
       }
@@ -185,7 +186,7 @@ export function GitHubSetupModal({
 
     try {
       // Try to detect repo from git remote
-      const result = await window.electronAPI.detectGitHubRepo(project.path);
+      const result = await api.detectGitHubRepo(project.id);
       if (result.success && result.data) {
         setDetectedRepo(result.data);
         setGithubRepo(result.data);
@@ -212,7 +213,7 @@ export function GitHubSetupModal({
 
     try {
       // Get branches from GitHub API
-      const result = await window.electronAPI.getGitHubBranches(repo, githubToken!);
+      const result = await api.getGitHubBranches(repo, githubToken!);
       if (result.success && result.data) {
         setBranches(result.data);
 
@@ -247,7 +248,7 @@ export function GitHubSetupModal({
 
     // Check if Claude is already authenticated before showing auth step
     try {
-      const profilesResult = await window.electronAPI.getClaudeProfiles();
+      const profilesResult = await api.getClaudeProfiles();
       if (profilesResult.success && profilesResult.data) {
         const activeProfile = profilesResult.data.profiles.find(
           (p) => p.id === profilesResult.data!.activeProfileId
@@ -291,7 +292,7 @@ export function GitHubSetupModal({
     setError(null);
 
     try {
-      const result = await window.electronAPI.createGitHubRepo(newRepoName.trim(), {
+      const result = await api.createGitHubRepo(newRepoName.trim(), {
         isPrivate: isPrivateRepo,
         projectPath: project.path,
         owner: selectedOwner !== githubUsername ? selectedOwner : undefined // Only pass owner if it's an org
@@ -344,7 +345,7 @@ export function GitHubSetupModal({
     setError(null);
 
     try {
-      const result = await window.electronAPI.addGitRemote(project.path, existingRepoName.trim());
+      const result = await api.addGitRemote(project.path, existingRepoName.trim());
 
       if (result.success) {
         setGithubRepo(existingRepoName.trim());

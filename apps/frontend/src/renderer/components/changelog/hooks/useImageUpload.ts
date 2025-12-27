@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, type DragEvent, type ClipboardEvent } from 'react';
 import { blobToBase64, isValidImageMimeType, resolveFilename } from '../../ImageUpload';
 import { ALLOWED_IMAGE_TYPES_DISPLAY } from '../../../../shared/constants';
+import { api } from '../../../client-api';
 
 interface UseImageUploadOptions {
   projectId: string | null;
@@ -46,7 +47,7 @@ export function useImageUpload({ projectId, content, onContentChange }: UseImage
       const baseFilename = `changelog-${timestamp}.${extension}`;
       const filename = resolveFilename(baseFilename, []);
 
-      const result = await window.electronAPI.saveChangelogImage(
+      const result = await api.saveChangelogImage(
         projectId,
         dataUrl,
         filename

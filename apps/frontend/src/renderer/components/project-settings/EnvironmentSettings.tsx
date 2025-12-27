@@ -1,3 +1,4 @@
+import { api } from '../../client-api';
 import { useState, useEffect } from 'react';
 import {
   Key,
@@ -55,7 +56,7 @@ export function EnvironmentSettings({
     const loadProfiles = async () => {
       setIsLoadingProfiles(true);
       try {
-        const result = await window.electronAPI.getClaudeProfiles();
+        const result = await api.getClaudeProfiles();
         if (result.success && result.data) {
           setClaudeProfiles(result.data.profiles);
           setActiveProfileId(result.data.activeProfileId);
