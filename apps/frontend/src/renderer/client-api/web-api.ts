@@ -504,15 +504,8 @@ export function createWebAPI() {
     installUpdate: stubError('installUpdate', 'Not available in web mode'),
     installAppUpdate: stubError('installAppUpdate', 'Not available in web mode'),
 
-    // OAuth initialization (requires browser popup)
-    initializeClaudeProfile: async () => ({
-      success: false,
-      error: 'OAuth browser authentication not available in web mode. Use manual token entry.',
-    }),
-    invokeClaudeSetup: async () => ({
-      success: false,
-      error: 'OAuth browser authentication not available in web mode. Use manual token entry.',
-    }),
+    // NOTE: initializeClaudeProfile is auto-generated from channel mapping
+    // It calls POST /api/claude/profiles/{id}/initialize which returns requiresManualToken
 
     // ========================================================================
     // WebSocket management
