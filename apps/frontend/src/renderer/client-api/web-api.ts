@@ -514,6 +514,17 @@ export function createWebAPI() {
     // It calls POST /api/claude/profiles/{id}/initialize which returns requiresManualToken
 
     // ========================================================================
+    // Stub methods to prevent crashes
+    // ========================================================================
+    getAppVersion: async () => '2.7.2-web',
+    onProactiveSwapNotification: stubEvent('onProactiveSwapNotification'),
+    onAppUpdateAvailable: stubEvent('onAppUpdateAvailable'),
+    onAppUpdateDownloaded: stubEvent('onAppUpdateDownloaded'),
+    onAppUpdateError: stubEvent('onAppUpdateError'),
+    onAppUpdateProgress: stubEvent('onAppUpdateProgress'),
+    onTaskProgress: stubEvent('onTaskProgress'),
+
+    // ========================================================================
     // WebSocket management
     // ========================================================================
     setActiveProject: (projectId: string) => {
