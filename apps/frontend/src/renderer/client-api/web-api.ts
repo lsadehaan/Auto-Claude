@@ -325,11 +325,21 @@ function createAutoMethod(mapping: EndpointMapping) {
     } else {
       // POST/PUT/DELETE - remaining args become body
       let body: unknown = undefined;
-      if (remainingArgs.length === 1) {
+
+      // If bodyParams specified, map args to named parameters
+      if (mapping.bodyParams && remainingArgs.length > 0) {
+        body = {};
+        mapping.bodyParams.forEach((param, index) => {
+          if (remainingArgs[index] !== undefined) {
+            (body as Record<string, unknown>)[param] = remainingArgs[index];
+          }
+        });
+      } else if (remainingArgs.length === 1) {
         body = remainingArgs[0];
       } else if (remainingArgs.length > 1) {
         body = remainingArgs;
       }
+
       return request(mapping.method, path, body);
     }
   };

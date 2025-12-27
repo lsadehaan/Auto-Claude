@@ -16,6 +16,8 @@ export interface EndpointMapping {
   pathArgs?: number[];
   /** For GET requests, map remaining args to these query param names */
   queryParams?: string[];
+  /** For POST/PUT/DELETE, map remaining args to these body param names */
+  bodyParams?: string[];
   /** Custom body builder for complex cases */
   bodyBuilder?: 'wrap' | 'spread' | 'first';
 }
@@ -33,8 +35,8 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   // ============================================================================
   'project:list': { method: 'GET', path: '/projects' },
   'project:add': { method: 'POST', path: '/projects', bodyBuilder: 'wrap' },
-  'project:create': { method: 'POST', path: '/projects/create' },
-  'project:clone': { method: 'POST', path: '/projects/clone' },
+  'project:create': { method: 'POST', path: '/projects/create', bodyParams: ['name', 'initGit'] },
+  'project:clone': { method: 'POST', path: '/projects/clone', bodyParams: ['gitUrl', 'name'] },
   'project:remove': { method: 'DELETE', path: '/projects/{0}', pathArgs: [0] },
   'project:updateSettings': { method: 'PUT', path: '/projects/{0}/settings', pathArgs: [0] },
   'project:initialize': { method: 'POST', path: '/projects/{0}/initialize', pathArgs: [0] },
