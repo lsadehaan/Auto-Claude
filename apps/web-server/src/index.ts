@@ -56,6 +56,20 @@ app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });
 });
 
+// Version endpoint (no auth required)
+app.get('/api/version', async (_req, res) => {
+  try {
+    const { execSync } = await import('child_process');
+    const commit = execSync('git rev-parse --short HEAD', {
+      cwd: join(__dirname, '../../..'),
+      encoding: 'utf-8'
+    }).trim();
+    res.json({ success: true, data: { commit } });
+  } catch (error) {
+    res.json({ success: true, data: { commit: 'unknown' } });
+  }
+});
+
 // Favicon handler (prevent 404 spam in logs)
 app.get('/favicon.ico', (_req, res) => {
   res.status(204).end(); // No Content

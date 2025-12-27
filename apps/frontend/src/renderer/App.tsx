@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Settings2, Download, RefreshCw, AlertCircle } from 'lucide-react';
+import { api } from './client-api';
 import {
   DndContext,
   DragOverlay,
@@ -44,8 +45,10 @@ import { GitHubIssues } from './components/GitHubIssues';
 import { Changelog } from './components/Changelog';
 import { Worktrees } from './components/Worktrees';
 import { WelcomeScreen } from './components/WelcomeScreen';
+import { AddProjectModal } from './components/AddProjectModal';
 import { RateLimitModal } from './components/RateLimitModal';
 import { SDKRateLimitModal } from './components/SDKRateLimitModal';
+import { VersionDisplay } from './components/VersionDisplay';
 import { OnboardingWizard } from './components/onboarding';
 import { AppUpdateNotification } from './components/AppUpdateNotification';
 import { UsageIndicator } from './components/UsageIndicator';
@@ -86,6 +89,7 @@ export function App() {
   const [settingsInitialProjectSection, setSettingsInitialProjectSection] = useState<ProjectSettingsSection | undefined>(undefined);
   const [activeView, setActiveView] = useState<SidebarView>('kanban');
   const [isOnboardingWizardOpen, setIsOnboardingWizardOpen] = useState(false);
+  const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
 
   // Initialize dialog state
   const [showInitDialog, setShowInitDialog] = useState(false);
@@ -214,7 +218,7 @@ export function App() {
   // Listen for app updates - auto-open settings to 'updates' section when update is ready
   useEffect(() => {
     // When an update is downloaded and ready to install, open settings to updates section
-    const cleanupDownloaded = window.electronAPI.onAppUpdateDownloaded(() => {
+    const cleanupDownloaded = api.onAppUpdateDownloaded(() => {
       console.warn('[App] Update downloaded, opening settings to updates section');
       setSettingsInitialSection('updates');
       setIsSettingsDialogOpen(true);
@@ -252,7 +256,7 @@ export function App() {
 
   // Global keyboard shortcut: Cmd/Ctrl+T to add project (when not on terminals view)
   useEffect(() => {
-    const handleKeyDown = async (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       // Skip if in input fields
       if (
         e.target instanceof HTMLInputElement ||
@@ -265,29 +269,13 @@ export function App() {
       // Cmd/Ctrl+T: Add new project (only when not on terminals view)
       if ((e.ctrlKey || e.metaKey) && e.key === 't' && activeView !== 'terminals') {
         e.preventDefault();
-        try {
-          const path = await window.electronAPI.selectDirectory();
-          if (path) {
-            const project = await addProject(path);
-            if (project) {
-              openProjectTab(project.id);
-              if (!project.autoBuildPath) {
-                setPendingProject(project);
-                setInitError(null);
-                setInitSuccess(false);
-                setShowInitDialog(true);
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Failed to add project:', error);
-        }
+        setIsAddProjectModalOpen(true);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeView, openProjectTab]);
+  }, [activeView]);
 
   // Load tasks when project changes
   useEffect(() => {
@@ -304,7 +292,7 @@ export function App() {
 
     // Close existing terminals (they belong to the previous project)
     currentTerminals.forEach((t) => {
-      window.electronAPI.destroyTerminal(t.id);
+      api.destroyTerminal(t.id);
     });
     useTerminalStore.getState().clearAllTerminals();
 
@@ -394,26 +382,20 @@ export function App() {
     setSelectedTask(null);
   };
 
-  const handleAddProject = async () => {
-    try {
-      const path = await window.electronAPI.selectDirectory();
-      if (path) {
-        const project = await addProject(path);
-        if (project) {
-          // Open a tab for the new project
-          openProjectTab(project.id);
+  const handleAddProject = () => {
+    setIsAddProjectModalOpen(true);
+  };
 
-          if (!project.autoBuildPath) {
-            // Project doesn't have Auto Claude initialized, show init dialog
-            setPendingProject(project);
-            setInitError(null); // Clear any previous errors
-            setInitSuccess(false); // Reset success flag
-            setShowInitDialog(true);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Failed to add project:', error);
+  const handleProjectAdded = (project: Project, needsInit: boolean) => {
+    // Open a tab for the new project
+    openProjectTab(project.id);
+
+    if (needsInit) {
+      // Project doesn't have Auto Claude initialized, show init dialog
+      setPendingProject(project);
+      setInitError(null);
+      setInitSuccess(false);
+      setShowInitDialog(true);
     }
   };
 
@@ -511,14 +493,14 @@ export function App() {
       // The user needs to separately authenticate with Claude using 'claude setup-token'
 
       // Update project env config with GitHub settings
-      await window.electronAPI.updateProjectEnv(gitHubSetupProject.id, {
+      await api.updateProjectEnv(gitHubSetupProject.id, {
         githubEnabled: true,
         githubToken: settings.githubToken, // GitHub token for repo access
         githubRepo: settings.githubRepo
       });
 
       // Update project settings with mainBranch
-      await window.electronAPI.updateProjectSettings(gitHubSetupProject.id, {
+      await api.updateProjectSettings(gitHubSetupProject.id, {
         mainBranch: settings.mainBranch
       });
 
@@ -854,6 +836,16 @@ export function App() {
 
         {/* App Update Notification - shows when new app version is available */}
         <AppUpdateNotification />
+
+        {/* Add Project Modal - shows when adding a new project */}
+        <AddProjectModal
+          open={isAddProjectModalOpen}
+          onOpenChange={setIsAddProjectModalOpen}
+          onProjectAdded={handleProjectAdded}
+        />
+
+        {/* Version Display - shows git commit in bottom right corner */}
+        <VersionDisplay />
       </div>
     </TooltipProvider>
   );
