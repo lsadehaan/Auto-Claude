@@ -14,6 +14,7 @@ import { WizardProgress, WizardStep } from './WizardProgress';
 import { WelcomeStep } from './WelcomeStep';
 import { OAuthStep } from './OAuthStep';
 import { MemoryStep } from './MemoryStep';
+import { GitSetupStep } from './GitSetupStep';
 import { CompletionStep } from './CompletionStep';
 import { useSettingsStore } from '../../stores/settings-store';
 import { api } from '../../client-api';
@@ -26,13 +27,14 @@ interface OnboardingWizardProps {
 }
 
 // Wizard step identifiers
-type WizardStepId = 'welcome' | 'oauth' | 'memory' | 'completion';
+type WizardStepId = 'welcome' | 'oauth' | 'memory' | 'git' | 'completion';
 
 // Step configuration with translation keys
 const WIZARD_STEPS: { id: WizardStepId; labelKey: string }[] = [
   { id: 'welcome', labelKey: 'steps.welcome' },
   { id: 'oauth', labelKey: 'steps.auth' },
   { id: 'memory', labelKey: 'steps.memory' },
+  { id: 'git', labelKey: 'steps.git' },
   { id: 'completion', labelKey: 'steps.done' }
 ];
 
@@ -167,6 +169,13 @@ export function OnboardingWizard({
       case 'memory':
         return (
           <MemoryStep
+            onNext={goToNextStep}
+            onBack={goToPreviousStep}
+          />
+        );
+      case 'git':
+        return (
+          <GitSetupStep
             onNext={goToNextStep}
             onBack={goToPreviousStep}
           />

@@ -7,6 +7,8 @@ import { Router, type Request, type Response } from 'express';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import { config } from '../config.js';
+import { sshKeyService } from '../services/ssh-key-service.js';
+import { gitConfigService } from '../services/git-config-service.js';
 
 const router = Router();
 
@@ -53,6 +55,8 @@ interface AppSettings {
   specCreationAutoMode?: boolean;
   specCreationShowComplexity?: boolean;
   defaultComplexity?: string;
+  gitUserName?: string;
+  gitUserEmail?: string;
   [key: string]: unknown;
 }
 
@@ -297,6 +301,152 @@ router.put('/tabs', (req: Request, res: Response) => {
     res.json({
       success: false,
       error: 'Failed to save tab state',
+    });
+  }
+});
+
+// ============================================================================
+// SSH Key Management
+// ============================================================================
+
+/**
+ * GET /settings/ssh/key
+ * Get SSH key info (public key, fingerprint)
+ */
+router.get('/ssh/key', (_req: Request, res: Response) => {
+  try {
+    const keyInfo = sshKeyService.getKeyInfo();
+
+    if (!keyInfo) {
+      return res.json({
+        success: true,
+        data: { hasKey: false },
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        hasKey: true,
+        publicKey: keyInfo.publicKey,
+        fingerprint: keyInfo.fingerprint,
+      },
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get SSH key info',
+    });
+  }
+});
+
+/**
+ * POST /settings/ssh/generate
+ * Generate a new SSH key pair
+ * Body: { email, force? }
+ */
+router.post('/ssh/generate', (req: Request, res: Response) => {
+  try {
+    const { email, force } = req.body;
+
+    if (!email) {
+      return res.json({
+        success: false,
+        error: 'Email is required',
+      });
+    }
+
+    const keyInfo = sshKeyService.generateKeyPair(email, force || false);
+
+    res.json({
+      success: true,
+      data: {
+        publicKey: keyInfo.publicKey,
+        fingerprint: keyInfo.fingerprint,
+      },
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to generate SSH key',
+    });
+  }
+});
+
+/**
+ * POST /settings/ssh/test-github
+ * Test SSH connection to GitHub
+ */
+router.post('/ssh/test-github', async (_req: Request, res: Response) => {
+  try {
+    const result = await sshKeyService.testGitHubConnection();
+    res.json({
+      success: result.success,
+      data: { message: result.message },
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to test SSH connection',
+    });
+  }
+});
+
+// ============================================================================
+// Git Configuration
+// ============================================================================
+
+/**
+ * GET /settings/git/config
+ * Get global git configuration
+ */
+router.get('/git/config', (_req: Request, res: Response) => {
+  try {
+    const config = gitConfigService.getGlobalConfig();
+    res.json({
+      success: true,
+      data: config,
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get git config',
+    });
+  }
+});
+
+/**
+ * POST /settings/git/config
+ * Set global git configuration
+ * Body: { userName, userEmail }
+ */
+router.post('/git/config', (req: Request, res: Response) => {
+  try {
+    const { userName, userEmail } = req.body;
+
+    if (!userName || !userEmail) {
+      return res.json({
+        success: false,
+        error: 'userName and userEmail are required',
+      });
+    }
+
+    gitConfigService.setGlobalConfig({ userName, userEmail });
+
+    // Also store in settings for backward compatibility
+    const settings = readSettings();
+    settings.gitUserName = userName;
+    settings.gitUserEmail = userEmail;
+    writeSettings(settings);
+
+    res.json({
+      success: true,
+      data: { userName, userEmail },
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to save git config',
     });
   }
 });

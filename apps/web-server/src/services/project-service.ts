@@ -9,6 +9,7 @@ import { existsSync, mkdirSync, readdirSync, statSync, readFileSync, writeFileSy
 import { join, basename } from 'path';
 import { execSync } from 'child_process';
 import { config } from '../config.js';
+import { gitConfigService } from './git-config-service.js';
 
 export interface Project {
   id: string;
@@ -168,20 +169,7 @@ class ProjectService {
     // Create directory
     mkdirSync(projectPath, { recursive: true });
 
-    // Initialize git if requested
-    if (initGit) {
-      try {
-        execSync('git init', {
-          cwd: projectPath,
-          stdio: 'pipe',
-          shell: process.platform === 'win32' ? 'cmd.exe' : '/bin/sh',
-        });
-      } catch (error) {
-        console.warn('[ProjectService] Failed to init git:', error);
-      }
-    }
-
-    // Create meta
+    // Create meta first to get project ID
     const meta: ProjectMeta = {
       id: this.generateId(),
       name: safeName,
@@ -189,6 +177,15 @@ class ProjectService {
     };
     this.projectsMeta.set(safeName, meta);
     this.saveMeta();
+
+    // Initialize git if requested (now we have project ID)
+    if (initGit) {
+      const result = gitConfigService.initGit(projectPath, meta.id);
+      if (!result.success) {
+        console.warn('[ProjectService] Failed to init git:', result.error);
+        // Continue anyway - project is created, just without git
+      }
+    }
 
     return {
       id: meta.id,
@@ -218,19 +215,7 @@ class ProjectService {
       throw new Error(`Project "${repoName}" already exists`);
     }
 
-    // Clone the repository
-    try {
-      execSync(`git clone "${gitUrl}" "${repoName}"`, {
-        cwd: this.projectsDir,
-        stdio: 'pipe',
-        shell: process.platform === 'win32' ? 'cmd.exe' : '/bin/sh',
-        timeout: 120000, // 2 minute timeout
-      });
-    } catch (error) {
-      throw new Error(`Failed to clone repository: ${(error as Error).message}`);
-    }
-
-    // Create meta
+    // Create meta first to get project ID
     const meta: ProjectMeta = {
       id: this.generateId(),
       name: repoName,
@@ -238,6 +223,15 @@ class ProjectService {
     };
     this.projectsMeta.set(repoName, meta);
     this.saveMeta();
+
+    // Clone the repository using git config service (handles SSH and user identity)
+    const result = gitConfigService.cloneRepo(gitUrl, projectPath, meta.id);
+    if (!result.success) {
+      // Clean up meta if clone failed
+      this.projectsMeta.delete(repoName);
+      this.saveMeta();
+      throw new Error(`Failed to clone repository: ${result.error}`);
+    }
 
     return {
       id: meta.id,

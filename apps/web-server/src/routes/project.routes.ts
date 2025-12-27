@@ -4,6 +4,7 @@ import { execSync } from 'child_process';
 import path from 'path';
 import { adaptHandler, argExtractors, type IPCResult } from '../adapters/index.js';
 import { projectService, type Project } from '../services/project-service.js';
+import { gitConfigService } from '../services/git-config-service.js';
 
 const router = Router();
 
@@ -135,33 +136,9 @@ function checkGitStatus(projectPath: string, isGitRepo: boolean): GitStatus {
   }
 }
 
-function initializeGit(projectPath: string): { success: boolean; error?: string } {
-  try {
-    const shell = process.platform === 'win32' ? 'cmd.exe' : '/bin/sh';
-
-    execSync('git init', {
-      cwd: projectPath,
-      encoding: 'utf-8',
-      shell,
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
-
-    // Create initial commit
-    execSync('git add -A && git commit -m "Initial commit" --allow-empty', {
-      cwd: projectPath,
-      encoding: 'utf-8',
-      shell,
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
-
-    return { success: true };
-  } catch (error) {
-    console.error('[Git Init] Error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Git initialization failed'
-    };
-  }
+function initializeGit(projectPath: string, projectId?: string): { success: boolean; error?: string } {
+  // Use git config service which handles user identity and SSH
+  return gitConfigService.initGit(projectPath, projectId);
 }
 
 // ============================================================================
@@ -450,7 +427,7 @@ router.post('/:id/git/initialize', adaptHandler(
     if (!project) {
       return { success: false, error: 'Project not found' };
     }
-    const result = initializeGit(project.path);
+    const result = initializeGit(project.path, id);
 
     // Save the initialized state so we don't ask again on refresh
     if (result.success) {
