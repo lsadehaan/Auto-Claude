@@ -41,10 +41,28 @@ if (!apiInstance) {
 }
 
 /**
- * Unified API instance
+ * Unified API instance with lazy initialization
  * Use this throughout the application instead of window.electronAPI directly
+ *
+ * IMPORTANT: We use a Proxy to handle race conditions where components
+ * might try to access the API before module initialization completes
  */
-export const api = apiInstance;
+export const api = new Proxy({} as typeof apiInstance, {
+  get(_target, prop) {
+    if (!apiInstance) {
+      console.error(`[API] Attempted to access '${String(prop)}' before API initialization!`);
+      throw new Error(`API not initialized - cannot access ${String(prop)}`);
+    }
+    return (apiInstance as any)[prop];
+  },
+  set(_target, prop, value) {
+    if (!apiInstance) {
+      throw new Error(`API not initialized - cannot set ${String(prop)}`);
+    }
+    (apiInstance as any)[prop] = value;
+    return true;
+  }
+});
 
 /**
  * Check if running in Electron environment
