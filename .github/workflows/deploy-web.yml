@@ -1,0 +1,89 @@
+name: Deploy Web Server
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - 'apps/web-server/**'
+      - 'apps/frontend/**'
+      - 'apps/backend/**'
+      - '.github/workflows/deploy-web.yml'
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Set up Python
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          python3 --version
+          uv --version
+
+      - name: Install backend dependencies
+        working-directory: apps/backend
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          if [ ! -d ".venv" ]; then
+            uv venv
+          fi
+          uv pip install -r requirements.txt
+
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        run: npm install
+
+      - name: Build web frontend
+        working-directory: apps/frontend
+        run: npm run web:build
+
+      - name: Install web-server dependencies
+        working-directory: apps/web-server
+        run: npm install
+
+      - name: Build web-server
+        working-directory: apps/web-server
+        run: npm run build
+
+      - name: Restart Auto-Claude service
+        run: |
+          sudo systemctl restart auto-claude
+          sleep 3
+          sudo systemctl status auto-claude --no-pager | head -15
+
+      - name: Health check
+        run: |
+          echo "Waiting for service to be ready..."
+          sleep 5
+
+          # Test health endpoint
+          if curl -f http://localhost:3001/api/health; then
+            echo "✅ Deployment successful!"
+          else
+            echo "❌ Health check failed"
+            exit 1
+          fi
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: $(systemctl is-active auto-claude)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🌐 Access at: http://100.112.18.81" >> $GITHUB_STEP_SUMMARY
