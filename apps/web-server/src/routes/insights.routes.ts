@@ -29,16 +29,17 @@ insightsService.on('token', (projectId: string, token: string) => {
   eventBridge.broadcast('insights:token', { projectId, token });
 });
 
-insightsService.on('message-complete', (projectId: string, messageId: string, content: string) => {
-  eventBridge.broadcast('insights:message-complete', { projectId, messageId, content });
+insightsService.on('stream-chunk', (projectId: string, chunk: any) => {
+  eventBridge.broadcast('insights:chunk', { projectId, chunk });
 });
 
-insightsService.on('message-error', (projectId: string, error: string) => {
+insightsService.on('status', (projectId: string, status: any) => {
+  eventBridge.broadcast('insights:status', { projectId, status });
+});
+
+insightsService.on('error', (projectId: string, error: string) => {
+  console.error('[Insights] Error event:', { projectId, error });
   eventBridge.broadcast('insights:error', { projectId, error });
-});
-
-insightsService.on('tool-use', (projectId: string, toolName: string, status: string) => {
-  eventBridge.broadcast('insights:tool-use', { projectId, toolName, status });
 });
 
 // ============================================================================

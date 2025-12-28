@@ -17,4 +17,10 @@ export const insightsService = new InsightsService();
 const venvPython = path.join(config.backendPath || '', '.venv', 'bin', 'python3');
 const backendPath = config.backendPath || '';
 
+console.log('[InsightsService] Configuring with:', { venvPython, backendPath });
 insightsService.configure(venvPython, backendPath);
+
+// Add error event listener for debugging
+insightsService.on('error', (projectId: string, error: string) => {
+  console.error('[InsightsService] Error:', { projectId, error });
+});
