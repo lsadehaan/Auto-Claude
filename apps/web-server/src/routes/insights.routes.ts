@@ -67,10 +67,9 @@ router.get('/projects/:projectId/session', async (req, res) => {
  */
 router.post('/projects/:projectId/message', async (req, res) => {
   const { projectId } = req.params;
-  const { message, modelConfig } = req.body as {
-    message: string;
-    modelConfig?: InsightsModelConfig;
-  };
+
+  // Body comes as array [message, modelConfig] from frontend
+  const [message, modelConfig] = Array.isArray(req.body) ? req.body : [req.body.message, req.body.modelConfig];
 
   const project = projectService.getProject(projectId);
   if (!project) {
