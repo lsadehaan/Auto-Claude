@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Development Server
+
+The web server is deployed at:
+- **Hostname**: `claude` (SSH: `ssh root@claude`)
+- **URL**: https://claude.praiaradical.com
+- **Location**: `/opt/auto-claude/`
+- **Web Server PID**: `/tmp/auto-claude-web.pid`
+- **Web Server Log**: `/tmp/auto-claude-web.log`
+
 ## Project Overview
 
 Auto Claude is a multi-agent autonomous coding framework that builds software through coordinated AI agent sessions. It uses the Claude Code SDK to run agents in isolated workspaces with security controls.
