@@ -256,8 +256,28 @@ export async function createTask(
 /**
  * Start a task
  */
-export function startTask(taskId: string, options?: { parallel?: boolean; workers?: number }): void {
-  api.startTask(taskId, options);
+export async function startTask(taskId: string, options?: { parallel?: boolean; workers?: number }): Promise<void> {
+  // Get task to find its projectId
+  const store = useTaskStore.getState();
+  const task = store.tasks.find(t => t.id === taskId || t.specId === taskId);
+
+  if (!task) {
+    console.error('[TaskStore] Cannot start task - task not found:', taskId);
+    return;
+  }
+
+  // Get project path from project store
+  const { useProjectStore } = await import('./project-store');
+  const projectStore = useProjectStore.getState();
+  const project = projectStore.projects.find(p => p.id === task.projectId);
+
+  if (!project) {
+    console.error('[TaskStore] Cannot start task - project not found:', task.projectId);
+    return;
+  }
+
+  // Call API with projectPath
+  api.startTask(taskId, project.path, options?.parallel, options?.workers);
 }
 
 /**
