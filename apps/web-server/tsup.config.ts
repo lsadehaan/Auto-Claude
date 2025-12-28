@@ -71,6 +71,14 @@ export default defineConfig({
   sourcemap: true,
   splitting: false,
 
+  // Add banner to define __dirname and __filename for ESM
+  banner: {
+    js: `import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);`,
+  },
+
   // Bundle external packages that we import from frontend
   noExternal: [
     // Include frontend modules we import (they'll be bundled)
