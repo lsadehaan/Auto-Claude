@@ -45,20 +45,20 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
 
   // Tab state
   'tabState:get': { method: 'GET', path: '/settings/tabs' },
-  'tabState:save': { method: 'PUT', path: '/settings/tabs' },
+  'tabState:save': { method: 'PUT', path: '/settings/tabs', bodyParams: ['tabState'] },
 
   // ============================================================================
   // Task Operations
   // ============================================================================
   'task:list': { method: 'GET', path: '/tasks', queryParams: ['projectId', 'projectPath'] },
-  'task:create': { method: 'POST', path: '/tasks' },
+  'task:create': { method: 'POST', path: '/tasks', bodyParams: ['projectId', 'projectPath', 'title', 'description', 'complexity'] },
   'task:delete': { method: 'DELETE', path: '/tasks/{0}', pathArgs: [0] },
   'task:update': { method: 'PUT', path: '/tasks/{0}', pathArgs: [0] },
   'task:start': { method: 'POST', path: '/tasks/{0}/start', pathArgs: [0], bodyParams: ['projectPath', 'autoContinue', 'maxIterations'] },
   'task:stop': { method: 'POST', path: '/tasks/{0}/stop', pathArgs: [0], bodyParams: ['taskId'] },
   'task:review': { method: 'GET', path: '/tasks/{0}/review', pathArgs: [0] },
   'task:updateStatus': { method: 'PUT', path: '/tasks/{0}/status', pathArgs: [0] },
-  'task:recoverStuck': { method: 'POST', path: '/tasks/{0}/recover', pathArgs: [0] },
+  'task:recoverStuck': { method: 'POST', path: '/tasks/{0}/recover', pathArgs: [0], bodyParams: ['autoRestart'] },
   'task:checkRunning': { method: 'GET', path: '/tasks/running/list' },
 
   // Worktree operations
@@ -96,21 +96,21 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   // Settings Operations
   // ============================================================================
   'settings:get': { method: 'GET', path: '/settings' },
-  'settings:save': { method: 'PUT', path: '/settings' },
+  'settings:save': { method: 'PUT', path: '/settings', bodyParams: ['updates'] },
 
   // ============================================================================
   // Claude Profile Operations
   // ============================================================================
   'claude:profilesGet': { method: 'GET', path: '/claude/profiles' },
-  'claude:profileSave': { method: 'POST', path: '/claude/profiles' },
+  'claude:profileSave': { method: 'POST', path: '/claude/profiles', bodyParams: ['profile'] },
   'claude:profileDelete': { method: 'DELETE', path: '/claude/profiles/{0}', pathArgs: [0] },
-  'claude:profileRename': { method: 'PUT', path: '/claude/profiles/{0}/rename', pathArgs: [0] },
+  'claude:profileRename': { method: 'PUT', path: '/claude/profiles/{0}/rename', pathArgs: [0], bodyParams: ['name'] },
   'claude:profileSetActive': { method: 'POST', path: '/claude/profiles/{0}/activate', pathArgs: [0] },
   'claude:profileSwitch': { method: 'POST', path: '/claude/profiles/{0}/switch', pathArgs: [0] },
   'claude:profileInitialize': { method: 'POST', path: '/claude/profiles/{0}/initialize', pathArgs: [0] },
   'claude:profileSetToken': { method: 'POST', path: '/claude/profiles/{0}/token', pathArgs: [0], bodyParams: ['token', 'email'] },
   'claude:autoSwitchSettings': { method: 'GET', path: '/claude/auto-switch' },
-  'claude:updateAutoSwitch': { method: 'PUT', path: '/claude/auto-switch' },
+  'claude:updateAutoSwitch': { method: 'PUT', path: '/claude/auto-switch', bodyParams: ['settings'] },
   'claude:fetchUsage': { method: 'GET', path: '/claude/profiles/{0}/usage', pathArgs: [0] },
   'claude:getBestProfile': { method: 'GET', path: '/claude/profiles/best' },
 
@@ -143,7 +143,7 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   'linear:getTeams': { method: 'GET', path: '/linear/teams' },
   'linear:getProjects': { method: 'GET', path: '/linear/projects/{0}', pathArgs: [0] },
   'linear:getIssues': { method: 'GET', path: '/linear/projects/{0}/issues', pathArgs: [0] },
-  'linear:importIssues': { method: 'POST', path: '/linear/projects/{0}/issues/import', pathArgs: [0] },
+  'linear:importIssues': { method: 'POST', path: '/linear/projects/{0}/issues/import', pathArgs: [0], bodyParams: ['issueIds'] },
   'linear:checkConnection': { method: 'GET', path: '/linear/projects/{0}/status', pathArgs: [0] },
 
   // ============================================================================
@@ -151,28 +151,28 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   // ============================================================================
   'roadmap:get': { method: 'GET', path: '/roadmap/projects/{0}', pathArgs: [0] },
   'roadmap:getStatus': { method: 'GET', path: '/roadmap/projects/{0}/status', pathArgs: [0] },
-  'roadmap:save': { method: 'PUT', path: '/roadmap/projects/{0}', pathArgs: [0] },
-  'roadmap:generate': { method: 'POST', path: '/roadmap/projects/{0}/generate', pathArgs: [0] },
-  'roadmap:generateWithCompetitor': { method: 'POST', path: '/roadmap/projects/{0}/generate', pathArgs: [0] },
-  'roadmap:refresh': { method: 'POST', path: '/roadmap/projects/{0}/refresh', pathArgs: [0] },
+  'roadmap:save': { method: 'PUT', path: '/roadmap/projects/{0}', pathArgs: [0], bodyParams: ['roadmapData'] },
+  'roadmap:generate': { method: 'POST', path: '/roadmap/projects/{0}/generate', pathArgs: [0], bodyParams: ['enableCompetitorAnalysis', 'refreshCompetitorAnalysis'] },
+  'roadmap:generateWithCompetitor': { method: 'POST', path: '/roadmap/projects/{0}/generate', pathArgs: [0], bodyParams: ['enableCompetitorAnalysis', 'refreshCompetitorAnalysis'] },
+  'roadmap:refresh': { method: 'POST', path: '/roadmap/projects/{0}/refresh', pathArgs: [0], bodyParams: ['enableCompetitorAnalysis', 'refreshCompetitorAnalysis'] },
   'roadmap:stop': { method: 'POST', path: '/roadmap/projects/{0}/stop', pathArgs: [0] },
-  'roadmap:updateFeature': { method: 'PUT', path: '/roadmap/projects/{0}/features/{1}', pathArgs: [0, 1] },
+  'roadmap:updateFeature': { method: 'PUT', path: '/roadmap/projects/{0}/features/{1}', pathArgs: [0, 1], bodyParams: ['status'] },
   'roadmap:convertToSpec': { method: 'POST', path: '/roadmap/projects/{0}/features/{1}/convert', pathArgs: [0, 1] },
 
   // ============================================================================
   // Ideation Operations
   // ============================================================================
   'ideation:get': { method: 'GET', path: '/ideation/projects/{0}', pathArgs: [0] },
-  'ideation:generate': { method: 'POST', path: '/ideation/projects/{0}/generate', pathArgs: [0] },
-  'ideation:refresh': { method: 'POST', path: '/ideation/projects/{0}/generate', pathArgs: [0] },
+  'ideation:generate': { method: 'POST', path: '/ideation/projects/{0}/generate', pathArgs: [0], bodyParams: ['config'] },
+  'ideation:refresh': { method: 'POST', path: '/ideation/projects/{0}/generate', pathArgs: [0], bodyParams: ['config'] },
   'ideation:stop': { method: 'POST', path: '/ideation/projects/{0}/stop', pathArgs: [0] },
-  'ideation:updateIdea': { method: 'PUT', path: '/ideation/projects/{0}/ideas/{1}/status', pathArgs: [0, 1] },
+  'ideation:updateIdea': { method: 'PUT', path: '/ideation/projects/{0}/ideas/{1}/status', pathArgs: [0, 1], bodyParams: ['status'] },
   'ideation:convertToTask': { method: 'POST', path: '/ideation/projects/{0}/ideas/{1}/convert', pathArgs: [0, 1] },
   'ideation:dismiss': { method: 'POST', path: '/ideation/projects/{0}/ideas/{1}/dismiss', pathArgs: [0, 1] },
   'ideation:dismissAll': { method: 'POST', path: '/ideation/projects/{0}/dismiss-all', pathArgs: [0] },
   'ideation:archive': { method: 'POST', path: '/ideation/projects/{0}/ideas/{1}/archive', pathArgs: [0, 1] },
   'ideation:delete': { method: 'DELETE', path: '/ideation/projects/{0}/ideas/{1}', pathArgs: [0, 1] },
-  'ideation:deleteMultiple': { method: 'POST', path: '/ideation/projects/{0}/delete-multiple', pathArgs: [0] },
+  'ideation:deleteMultiple': { method: 'POST', path: '/ideation/projects/{0}/delete-multiple', pathArgs: [0], bodyParams: ['ideaIds'] },
 
   // ============================================================================
   // Context Operations
@@ -226,38 +226,38 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   // Changelog Operations
   // ============================================================================
   'changelog:getDoneTasks': { method: 'GET', path: '/changelog/projects/{0}/done-tasks', pathArgs: [0] },
-  'changelog:loadTaskSpecs': { method: 'GET', path: '/changelog/projects/{0}/specs', pathArgs: [0] },
-  'changelog:generate': { method: 'POST', path: '/changelog/projects/{0}/generate', pathArgs: [0] },
-  'changelog:save': { method: 'PUT', path: '/changelog/projects/{0}', pathArgs: [0] },
+  'changelog:loadTaskSpecs': { method: 'GET', path: '/changelog/projects/{0}/specs', pathArgs: [0], queryParams: ['taskIds'] },
+  'changelog:generate': { method: 'POST', path: '/changelog/projects/{0}/generate', pathArgs: [0], bodyParams: ['request'] },
+  'changelog:save': { method: 'PUT', path: '/changelog/projects/{0}', pathArgs: [0], bodyParams: ['request'] },
   'changelog:readExisting': { method: 'GET', path: '/changelog/projects/{0}', pathArgs: [0] },
-  'changelog:suggestVersion': { method: 'GET', path: '/changelog/projects/{0}/suggest-version', pathArgs: [0] },
-  'changelog:suggestVersionFromCommits': { method: 'POST', path: '/changelog/projects/{0}/suggest-version-from-commits', pathArgs: [0] },
+  'changelog:suggestVersion': { method: 'GET', path: '/changelog/projects/{0}/suggest-version', pathArgs: [0], queryParams: ['taskIds'] },
+  'changelog:suggestVersionFromCommits': { method: 'POST', path: '/changelog/projects/{0}/suggest-version-from-commits', pathArgs: [0], bodyParams: ['commits'] },
   'changelog:getBranches': { method: 'GET', path: '/changelog/projects/{0}/branches', pathArgs: [0] },
   'changelog:getTags': { method: 'GET', path: '/changelog/projects/{0}/tags', pathArgs: [0] },
-  'changelog:getCommitsPreview': { method: 'POST', path: '/changelog/projects/{0}/commits-preview', pathArgs: [0] },
-  'changelog:saveImage': { method: 'POST', path: '/changelog/projects/{0}/image', pathArgs: [0] },
+  'changelog:getCommitsPreview': { method: 'POST', path: '/changelog/projects/{0}/commits-preview', pathArgs: [0], bodyParams: ['options', 'mode'] },
+  'changelog:saveImage': { method: 'POST', path: '/changelog/projects/{0}/image', pathArgs: [0], bodyParams: ['imageData', 'filename'] },
   'changelog:readLocalImage': { method: 'GET', path: '/changelog/projects/{0}/image', pathArgs: [0] },
 
   // ============================================================================
   // Insights Operations
   // ============================================================================
   'insights:getSession': { method: 'GET', path: '/insights/projects/{0}/session', pathArgs: [0] },
-  'insights:sendMessage': { method: 'POST', path: '/insights/projects/{0}/message', pathArgs: [0] },
+  'insights:sendMessage': { method: 'POST', path: '/insights/projects/{0}/message', pathArgs: [0], bodyParams: ['message', 'modelConfig'] },
   'insights:clearSession': { method: 'DELETE', path: '/insights/projects/{0}/session', pathArgs: [0] },
-  'insights:createTask': { method: 'POST', path: '/insights/projects/{0}/create-task', pathArgs: [0] },
+  'insights:createTask': { method: 'POST', path: '/insights/projects/{0}/create-task', pathArgs: [0], bodyParams: ['title', 'description', 'metadata'] },
   'insights:listSessions': { method: 'GET', path: '/insights/projects/{0}/sessions', pathArgs: [0] },
   'insights:newSession': { method: 'POST', path: '/insights/projects/{0}/sessions', pathArgs: [0] },
   'insights:switchSession': { method: 'POST', path: '/insights/projects/{0}/sessions/{1}/switch', pathArgs: [0, 1] },
   'insights:deleteSession': { method: 'DELETE', path: '/insights/projects/{0}/sessions/{1}', pathArgs: [0, 1] },
-  'insights:renameSession': { method: 'PUT', path: '/insights/projects/{0}/sessions/{1}/rename', pathArgs: [0, 1] },
-  'insights:updateModelConfig': { method: 'PUT', path: '/insights/projects/{0}/model-config', pathArgs: [0] },
+  'insights:renameSession': { method: 'PUT', path: '/insights/projects/{0}/sessions/{1}/rename', pathArgs: [0, 1], bodyParams: ['title'] },
+  'insights:updateModelConfig': { method: 'PUT', path: '/insights/projects/{0}/model-config', pathArgs: [0], bodyParams: ['modelConfig'] },
 
   // ============================================================================
   // Memory Operations
   // ============================================================================
   'memory:status': { method: 'GET', path: '/memory/status', queryParams: ['dbPath'] },
   'memory:listDatabases': { method: 'GET', path: '/memory/databases', queryParams: ['dbPath'] },
-  'memory:testConnection': { method: 'POST', path: '/memory/test-connection' },
+  'memory:testConnection': { method: 'POST', path: '/memory/test-connection', bodyParams: ['provider', 'apiKey', 'baseUrl'] },
 
   // ============================================================================
   // Graphiti Validation
@@ -271,7 +271,7 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   'ollama:checkStatus': { method: 'GET', path: '/ollama/status', queryParams: ['baseUrl'] },
   'ollama:listModels': { method: 'GET', path: '/ollama/models', queryParams: ['baseUrl'] },
   'ollama:listEmbeddingModels': { method: 'GET', path: '/ollama/models/embedding', queryParams: ['baseUrl'] },
-  'ollama:pullModel': { method: 'POST', path: '/ollama/models/pull' },
+  'ollama:pullModel': { method: 'POST', path: '/ollama/models/pull', bodyParams: ['model', 'baseUrl'] },
 
   // ============================================================================
   // Auto Build Source Operations

@@ -68,9 +68,7 @@ router.get('/projects/:projectId/session', async (req, res) => {
  */
 router.post('/projects/:projectId/message', async (req, res) => {
   const { projectId } = req.params;
-
-  // Body comes as array [message, modelConfig] from frontend
-  const [message, modelConfig] = Array.isArray(req.body) ? req.body : [req.body.message, req.body.modelConfig];
+  const { message, modelConfig } = req.body;
 
   const project = projectService.getProject(projectId);
   if (!project) {
@@ -106,11 +104,11 @@ router.post('/projects/:projectId/clear', async (req, res) => {
  */
 const createTaskHandler = async (req, res) => {
   const { projectId } = req.params;
-
-  // Body comes as array [title, description, metadata] from frontend
-  const [title, description, metadata] = Array.isArray(req.body)
-    ? req.body
-    : [req.body.title, req.body.description, req.body.metadata];
+  const { title, description, metadata } = req.body as {
+    title: string;
+    description: string;
+    metadata?: TaskMetadata;
+  };
 
   const project = projectService.getProject(projectId);
   if (!project) {
