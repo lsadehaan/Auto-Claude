@@ -32,6 +32,60 @@ SDK_ENV_VARS = [
 ]
 
 
+def get_token_from_profiles() -> str | None:
+    """
+    Get authentication token from claude-profiles.json.
+
+    Checks for profiles in:
+    1. ~/.auto-claude/claude-profiles.json (Auto Claude storage)
+    2. ~/.claude/claude-profiles.json (Claude Code CLI storage)
+
+    Returns:
+        Token string if found in profiles, None otherwise
+    """
+    from pathlib import Path
+
+    # Check both possible locations
+    profile_paths = [
+        Path.home() / ".auto-claude" / "claude-profiles.json",
+        Path.home() / ".claude" / "claude-profiles.json",
+    ]
+
+    for profile_path in profile_paths:
+        if not profile_path.exists():
+            continue
+
+        try:
+            with open(profile_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            # Get active profile ID
+            active_id = data.get("activeProfileId")
+            if not active_id:
+                continue
+
+            # Find the active profile
+            profiles = data.get("profiles", [])
+            active_profile = next(
+                (p for p in profiles if p.get("id") == active_id),
+                None
+            )
+
+            if not active_profile:
+                continue
+
+            # Extract token
+            token = active_profile.get("oauthToken")
+            if token and token.startswith("sk-ant-oat01-"):
+                return token
+
+        except (json.JSONDecodeError, KeyError, OSError):
+            # Continue to next profile path
+            continue
+
+    return None
+
+
 def get_token_from_keychain() -> str | None:
     """
     Get authentication token from macOS Keychain.
@@ -90,12 +144,13 @@ def get_token_from_keychain() -> str | None:
 
 def get_auth_token() -> str | None:
     """
-    Get authentication token from environment variables or macOS Keychain.
+    Get authentication token from environment variables, profiles, or macOS Keychain.
 
     Checks multiple sources in priority order:
     1. CLAUDE_CODE_OAUTH_TOKEN (env var)
     2. ANTHROPIC_AUTH_TOKEN (CCR/proxy env var for enterprise setups)
-    3. macOS Keychain (if on Darwin platform)
+    3. claude-profiles.json (Auto Claude or Claude Code CLI profiles)
+    4. macOS Keychain (if on Darwin platform)
 
     NOTE: ANTHROPIC_API_KEY is intentionally NOT supported to prevent
     silent billing to user's API credits when OAuth is misconfigured.
@@ -109,6 +164,11 @@ def get_auth_token() -> str | None:
         if token:
             return token
 
+    # Check profile files
+    token = get_token_from_profiles()
+    if token:
+        return token
+
     # Fallback to macOS Keychain
     return get_token_from_keychain()
 
@@ -119,6 +179,10 @@ def get_auth_token_source() -> str | None:
     for var in AUTH_TOKEN_ENV_VARS:
         if os.environ.get(var):
             return var
+
+    # Check if token came from profile files
+    if get_token_from_profiles():
+        return "claude-profiles.json"
 
     # Check if token came from macOS Keychain
     if get_token_from_keychain():
