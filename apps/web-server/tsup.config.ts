@@ -73,10 +73,10 @@ export default defineConfig({
 
   // Add banner to define __dirname and __filename for ESM
   banner: {
-    js: `import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);`,
+    js: `import { fileURLToPath as __fileURLToPath } from 'url';
+import { dirname as __dirname_fn } from 'path';
+const __filename = __fileURLToPath(import.meta.url);
+const __dirname = __dirname_fn(__filename);`,
   },
 
   // Bundle external packages that we import from frontend
