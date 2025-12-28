@@ -14,8 +14,8 @@ import path from 'path';
 import { projectService } from '../services/project-service.js';
 import { eventBridge } from '../adapters/event-bridge.js';
 
-// Import directly from Electron codebase - bundler handles the aliasing
-import { insightsService } from '../../../frontend/src/main/insights-service';
+// Import from wrapper service (avoids __dirname issues with direct import)
+import { insightsService } from '../services/insights-service.js';
 import type { InsightsModelConfig, TaskMetadata } from '../../../frontend/src/shared/types';
 
 const router = Router();

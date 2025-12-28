@@ -14,8 +14,8 @@ import path from 'path';
 import { projectService } from '../services/project-service.js';
 import { eventBridge } from '../adapters/event-bridge.js';
 
-// Import directly from Electron codebase
-import { changelogService } from '../../../frontend/src/main/changelog';
+// Import from wrapper service (avoids __dirname issues with direct import)
+import { changelogService } from '../services/changelog-service.js';
 import type {
   Task,
   ChangelogGenerationRequest,
