@@ -72,11 +72,12 @@ export default defineConfig({
   splitting: false,
 
   // Add banner to define __dirname and __filename for ESM
+  // Use var instead of const to allow redeclaration
   banner: {
     js: `import { fileURLToPath as __fileURLToPath } from 'url';
 import { dirname as __dirname_fn } from 'path';
-const __filename = __fileURLToPath(import.meta.url);
-const __dirname = __dirname_fn(__filename);`,
+var __filename = __fileURLToPath(import.meta.url);
+var __dirname = __dirname_fn(__filename);`,
   },
 
   // Bundle external packages that we import from frontend
