@@ -346,7 +346,8 @@ export function setupInsightsListeners(): () => void {
 
   // Listen for streaming chunks
   const unsubStreamChunk = api.onInsightsStreamChunk(
-    (_projectId, chunk: InsightsStreamChunk) => {
+    (data: { projectId: string; chunk: InsightsStreamChunk }) => {
+      const { chunk } = data;
       switch (chunk.type) {
         case 'text':
           if (chunk.content) {
@@ -404,15 +405,15 @@ export function setupInsightsListeners(): () => void {
   );
 
   // Listen for status updates
-  const unsubStatus = api.onInsightsStatus((_projectId, status) => {
-    store().setStatus(status);
+  const unsubStatus = api.onInsightsStatus((data: { projectId: string; status: any }) => {
+    store().setStatus(data.status);
   });
 
   // Listen for errors
-  const unsubError = api.onInsightsError((_projectId, error) => {
+  const unsubError = api.onInsightsError((data: { projectId: string; error: string }) => {
     store().setStatus({
       phase: 'error',
-      error
+      error: data.error
     });
   });
 
