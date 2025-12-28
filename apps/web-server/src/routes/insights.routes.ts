@@ -106,11 +106,11 @@ router.post('/projects/:projectId/clear', async (req, res) => {
  */
 const createTaskHandler = async (req, res) => {
   const { projectId } = req.params;
-  const { title, description, metadata } = req.body as {
-    title: string;
-    description: string;
-    metadata?: TaskMetadata;
-  };
+
+  // Body comes as array [title, description, metadata] from frontend
+  const [title, description, metadata] = Array.isArray(req.body)
+    ? req.body
+    : [req.body.title, req.body.description, req.body.metadata];
 
   const project = projectService.getProject(projectId);
   if (!project) {
