@@ -277,7 +277,15 @@ export async function startTask(taskId: string, options?: { parallel?: boolean; 
   }
 
   // Call API with projectPath
-  api.startTask(taskId, project.path, options?.parallel, options?.workers);
+  const result = await api.startTask(taskId, project.path, options?.parallel, options?.workers);
+
+  if (result.success) {
+    // Refresh task list to pick up updated status from server
+    await loadTasks(task.projectId);
+  } else {
+    console.error('[TaskStore] Failed to start task:', result.error);
+    store.setError(result.error || 'Failed to start task');
+  }
 }
 
 /**
