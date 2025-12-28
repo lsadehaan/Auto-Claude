@@ -110,6 +110,7 @@ class ProjectService {
 
       // Check if it has Auto-Claude initialized
       const hasAutoClaude = existsSync(join(projectPath, '.auto-claude'));
+      const autoBuildPath = hasAutoClaude ? '.auto-claude' : undefined;
 
       // Get or create meta
       let meta = this.projectsMeta.get(entry.name);
@@ -129,6 +130,7 @@ class ProjectService {
         path: projectPath,
         isGitRepo: isGitRepo || meta.settings?.gitInitialized === true,
         hasAutoClaude: hasAutoClaude || meta.settings?.autoClaudeInitialized === true,
+        autoBuildPath,
         createdAt: meta.createdAt,
         lastModified: stats.mtime.toISOString(),
         ...(meta.settings && { settings: meta.settings }),
