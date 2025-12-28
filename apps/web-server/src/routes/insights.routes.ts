@@ -102,8 +102,9 @@ router.post('/projects/:projectId/clear', async (req, res) => {
 /**
  * Create task from insights
  * POST /insights/projects/:projectId/tasks
+ * POST /insights/projects/:projectId/create-task (alias for frontend compatibility)
  */
-router.post('/projects/:projectId/tasks', async (req, res) => {
+const createTaskHandler = async (req, res) => {
   const { projectId } = req.params;
   const { title, description, metadata } = req.body as {
     title: string;
@@ -201,7 +202,10 @@ router.post('/projects/:projectId/tasks', async (req, res) => {
       error: error instanceof Error ? error.message : 'Failed to create task'
     });
   }
-});
+};
+
+router.post('/projects/:projectId/tasks', createTaskHandler);
+router.post('/projects/:projectId/create-task', createTaskHandler);
 
 /**
  * List all sessions
