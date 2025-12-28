@@ -11,6 +11,25 @@ The web server is deployed at:
 - **Web Server PID**: `/tmp/auto-claude-web.pid`
 - **Web Server Log**: `/tmp/auto-claude-web.log`
 
+### Deployment Process (CRITICAL - Follow Exactly)
+
+**Always use the restart script to avoid running old code:**
+
+```bash
+# Deploy latest code and restart (one command)
+ssh root@claude '/usr/local/bin/restart-web'
+
+# Verify deployment worked:
+ssh root@claude 'curl -s http://localhost:3001/api/health | grep timestamp'
+# Compare timestamp with current time - should be within last 2 minutes
+```
+
+**NEVER manually restart** - the restart script ensures:
+1. Latest code is pulled
+2. Clean rebuild (dist/ removed)
+3. Server restart with new code
+4. Proper logging setup
+
 ## Project Overview
 
 Auto Claude is a multi-agent autonomous coding framework that builds software through coordinated AI agent sessions. It uses the Claude Code SDK to run agents in isolated workspaces with security controls.
