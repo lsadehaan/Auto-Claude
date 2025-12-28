@@ -156,26 +156,36 @@ export class AgentService extends EventEmitter {
   private getOAuthToken(): string | null {
     // First check Claude profiles (saved via UI onboarding)
     const profilesPath = path.join(homedir(), '.auto-claude', 'claude-profiles.json');
+    console.log('[AgentService] Checking for OAuth token in:', profilesPath);
     if (existsSync(profilesPath)) {
       try {
         const profilesData = JSON.parse(readFileSync(profilesPath, 'utf-8'));
+        console.log('[AgentService] Profiles data:', {
+          activeProfileId: profilesData.activeProfileId,
+          profileCount: profilesData.profiles?.length,
+        });
         // Get the active profile's token
         if (profilesData.activeProfileId) {
           const activeProfile = profilesData.profiles?.find(
             (p: any) => p.id === profilesData.activeProfileId
           );
+          console.log('[AgentService] Active profile found:', !!activeProfile, 'has token:', !!activeProfile?.oauthToken);
           if (activeProfile?.oauthToken) {
+            console.log('[AgentService] Using OAuth token from active profile');
             return activeProfile.oauthToken;
           }
         }
         // Fall back to any profile with a token
         const profileWithToken = profilesData.profiles?.find((p: any) => p.oauthToken);
         if (profileWithToken?.oauthToken) {
+          console.log('[AgentService] Using OAuth token from first available profile');
           return profileWithToken.oauthToken;
         }
-      } catch {
-        // Ignore errors reading profiles
+      } catch (error) {
+        console.error('[AgentService] Error reading profiles:', error);
       }
+    } else {
+      console.log('[AgentService] Profiles file does not exist');
     }
 
     // Check global settings (backward compatibility)
@@ -217,8 +227,11 @@ export class AgentService extends EventEmitter {
       maxIterations?: number;
     } = {}
   ): { success: boolean; error?: string } {
+    console.log('[AgentService] startTask called:', { taskId, projectPath, specId, options });
+
     // Check if task is already running
     if (this.processes.has(taskId)) {
+      console.log('[AgentService] Task already running');
       return { success: false, error: 'Task is already running' };
     }
 

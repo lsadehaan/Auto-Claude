@@ -381,7 +381,10 @@ router.post('/:specId/start', (req: Request, res: Response) => {
   const { specId } = req.params;
   const { projectPath, autoContinue, maxIterations } = req.body;
 
+  console.log('[TaskRoutes] POST /:specId/start called:', { specId, projectPath, autoContinue, maxIterations, body: req.body });
+
   if (!projectPath) {
+    console.log('[TaskRoutes] Missing projectPath');
     return res.json({
       success: false,
       error: 'Project path is required',
