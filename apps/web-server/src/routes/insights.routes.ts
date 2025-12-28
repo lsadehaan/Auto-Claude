@@ -104,6 +104,13 @@ router.post('/projects/:projectId/clear', async (req, res) => {
  */
 const createTaskHandler = async (req, res) => {
   const { projectId } = req.params;
+  console.log('[InsightsRoutes] createTask called:', {
+    params: req.params,
+    body: req.body,
+    bodyType: typeof req.body,
+    isArray: Array.isArray(req.body),
+  });
+
   const { title, description, metadata } = req.body as {
     title: string;
     description: string;
