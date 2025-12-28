@@ -151,10 +151,34 @@ export class AgentService extends EventEmitter {
   }
 
   /**
-   * Get the Claude OAuth token from settings, config, or backend .env
+   * Get the Claude OAuth token from profiles, settings, config, or backend .env
    */
   private getOAuthToken(): string | null {
-    // First check global settings
+    // First check Claude profiles (saved via UI onboarding)
+    const profilesPath = path.join(homedir(), '.auto-claude', 'claude-profiles.json');
+    if (existsSync(profilesPath)) {
+      try {
+        const profilesData = JSON.parse(readFileSync(profilesPath, 'utf-8'));
+        // Get the active profile's token
+        if (profilesData.activeProfileId) {
+          const activeProfile = profilesData.profiles?.find(
+            (p: any) => p.id === profilesData.activeProfileId
+          );
+          if (activeProfile?.oauthToken) {
+            return activeProfile.oauthToken;
+          }
+        }
+        // Fall back to any profile with a token
+        const profileWithToken = profilesData.profiles?.find((p: any) => p.oauthToken);
+        if (profileWithToken?.oauthToken) {
+          return profileWithToken.oauthToken;
+        }
+      } catch {
+        // Ignore errors reading profiles
+      }
+    }
+
+    // Check global settings (backward compatibility)
     const settingsPath = path.join(homedir(), '.auto-claude', 'settings.json');
     if (existsSync(settingsPath)) {
       try {
