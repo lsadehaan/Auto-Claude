@@ -73,21 +73,24 @@ export const DEFAULT_PHASE_THINKING: import('../types/settings').PhaseThinkingCo
 export const DEFAULT_FEATURE_MODELS: FeatureModelConfig = {
   insights: 'sonnet',   // Fast, responsive chat
   ideation: 'opus',     // Creative ideation benefits from Opus
-  roadmap: 'opus'       // Strategic planning benefits from Opus
+  roadmap: 'opus',      // Strategic planning benefits from Opus
+  reviewer: 'haiku'     // Fast, accurate code review
 };
 
 // Default feature thinking configuration
 export const DEFAULT_FEATURE_THINKING: FeatureThinkingConfig = {
   insights: 'medium',   // Balanced thinking for chat
   ideation: 'high',     // Deep thinking for creative ideas
-  roadmap: 'high'       // Strategic thinking for roadmap
+  roadmap: 'high',      // Strategic thinking for roadmap
+  reviewer: 'none'      // No extended thinking for reviews (fast validation)
 };
 
 // Feature labels for UI display
 export const FEATURE_LABELS: Record<keyof FeatureModelConfig, { label: string; description: string }> = {
   insights: { label: 'Insights Chat', description: 'Ask questions about your codebase' },
   ideation: { label: 'Ideation', description: 'Generate feature ideas and improvements' },
-  roadmap: { label: 'Roadmap', description: 'Create strategic feature roadmaps' }
+  roadmap: { label: 'Roadmap', description: 'Create strategic feature roadmaps' },
+  reviewer: { label: 'Code Review', description: 'Automated subtask and task validation' }
 };
 
 // Default agent profiles for preset model/thinking configurations

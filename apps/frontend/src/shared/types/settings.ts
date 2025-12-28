@@ -51,6 +51,7 @@ export interface FeatureModelConfig {
   insights: ModelTypeShort;    // Insights chat feature
   ideation: ModelTypeShort;    // Ideation generation
   roadmap: ModelTypeShort;     // Roadmap generation
+  reviewer: ModelTypeShort;    // Automated code review (subtask & task level)
 }
 
 // Feature-specific thinking level configuration
@@ -58,6 +59,7 @@ export interface FeatureThinkingConfig {
   insights: ThinkingLevel;
   ideation: ThinkingLevel;
   roadmap: ThinkingLevel;
+  reviewer: ThinkingLevel;
 }
 
 // Agent profile for preset model/thinking configurations

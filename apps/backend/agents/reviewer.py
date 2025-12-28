@@ -30,9 +30,7 @@ except ImportError:
     ClaudeSDKClient = None
 
 from core.auth import ensure_claude_code_oauth_token, get_auth_token
-
-# Default model for reviews (fast and accurate)
-DEFAULT_REVIEW_MODEL = "claude-3-5-haiku-latest"
+from phase_config import get_feature_model, get_feature_thinking_budget
 
 # Maximum diff size to send to the LLM
 MAX_DIFF_CHARS = 20000
@@ -46,11 +44,6 @@ def is_review_enabled() -> bool:
         return False
     enabled_str = os.environ.get("AUTO_REVIEW_ENABLED", "true").lower()
     return enabled_str in ("true", "1", "yes")
-
-
-def get_review_model() -> str:
-    """Get the model to use for automated review."""
-    return os.environ.get("REVIEWER_MODEL", DEFAULT_REVIEW_MODEL)
 
 
 # =============================================================================
@@ -221,7 +214,7 @@ async def review_subtask(
         subtask_id, subtask_description, diff, changed_files, commit_count
     )
 
-    return await _run_review(prompt, project_dir)
+    return await _run_review(prompt, project_dir, spec_dir)
 
 
 # =============================================================================
@@ -358,7 +351,7 @@ async def review_task(
 
     prompt = _build_task_review_prompt(spec, plan, commits, spec_dir)
 
-    return await _run_review(prompt, project_dir)
+    return await _run_review(prompt, project_dir, spec_dir)
 
 
 # =============================================================================
@@ -366,13 +359,16 @@ async def review_task(
 # =============================================================================
 
 
-async def _run_review(prompt: str, project_dir: Path) -> dict | None:
+async def _run_review(
+    prompt: str, project_dir: Path, spec_dir: Path | None = None
+) -> dict | None:
     """
     Run review using Claude Agent SDK.
 
     Args:
         prompt: The review prompt
         project_dir: Project directory for SDK context
+        spec_dir: Spec directory for reading feature config (optional)
 
     Returns:
         Review verdict dict or None if failed
@@ -388,23 +384,38 @@ async def _run_review(prompt: str, project_dir: Path) -> dict | None:
     # Ensure SDK can find the token
     ensure_claude_code_oauth_token()
 
-    model = get_review_model()
+    # Get reviewer model and thinking budget from feature config
+    if spec_dir:
+        model = get_feature_model(spec_dir, "reviewer")
+        thinking_budget = get_feature_thinking_budget(spec_dir, "reviewer")
+    else:
+        # Fallback to default if no spec_dir provided
+        from phase_config import DEFAULT_FEATURE_MODELS, DEFAULT_FEATURE_THINKING
+        from phase_config import resolve_model_id, get_thinking_budget
+
+        model = resolve_model_id(DEFAULT_FEATURE_MODELS["reviewer"])
+        thinking_budget = get_thinking_budget(DEFAULT_FEATURE_THINKING["reviewer"])
+
     cwd = str(project_dir.resolve())
 
     try:
         # Create SDK client for review
-        client = ClaudeSDKClient(
-            options=ClaudeAgentOptions(
-                model=model,
-                system_prompt=(
-                    "You are an expert code reviewer. You verify that work was completed correctly. "
-                    "Always respond with valid JSON only, no markdown formatting or explanations."
-                ),
-                allowed_tools=[],  # No tools needed for review
-                max_turns=1,  # Single turn review
-                cwd=cwd,
-            )
-        )
+        options_dict = {
+            "model": model,
+            "system_prompt": (
+                "You are an expert code reviewer. You verify that work was completed correctly. "
+                "Always respond with valid JSON only, no markdown formatting or explanations."
+            ),
+            "allowed_tools": [],  # No tools needed for review
+            "max_turns": 1,  # Single turn review
+            "cwd": cwd,
+        }
+
+        # Only add max_thinking_tokens if thinking budget is not None
+        if thinking_budget is not None:
+            options_dict["max_thinking_tokens"] = thinking_budget
+
+        client = ClaudeSDKClient(options=ClaudeAgentOptions(**options_dict))
 
         # Use async context manager
         async with client:

@@ -61,6 +61,21 @@ DEFAULT_PHASE_THINKING: dict[str, str] = {
     "qa": "high",
 }
 
+# Default feature configuration (matches UI defaults)
+DEFAULT_FEATURE_MODELS: dict[str, str] = {
+    "insights": "sonnet",
+    "ideation": "opus",
+    "roadmap": "opus",
+    "reviewer": "haiku",
+}
+
+DEFAULT_FEATURE_THINKING: dict[str, str] = {
+    "insights": "medium",
+    "ideation": "high",
+    "roadmap": "high",
+    "reviewer": "none",
+}
+
 
 class PhaseModelConfig(TypedDict, total=False):
     spec: str
@@ -76,17 +91,34 @@ class PhaseThinkingConfig(TypedDict, total=False):
     qa: str
 
 
+class FeatureModelConfig(TypedDict, total=False):
+    insights: str
+    ideation: str
+    roadmap: str
+    reviewer: str
+
+
+class FeatureThinkingConfig(TypedDict, total=False):
+    insights: str
+    ideation: str
+    roadmap: str
+    reviewer: str
+
+
 class TaskMetadataConfig(TypedDict, total=False):
     """Structure of model-related fields in task_metadata.json"""
 
     isAutoProfile: bool
     phaseModels: PhaseModelConfig
     phaseThinking: PhaseThinkingConfig
+    featureModels: FeatureModelConfig
+    featureThinking: FeatureThinkingConfig
     model: str
     thinkingLevel: str
 
 
 Phase = Literal["spec", "planning", "coding", "qa"]
+Feature = Literal["insights", "ideation", "roadmap", "reviewer"]
 
 
 def resolve_model_id(model: str) -> str:
@@ -299,3 +331,101 @@ def get_spec_phase_thinking_budget(phase_name: str) -> int | None:
     """
     thinking_level = SPEC_PHASE_THINKING_LEVELS.get(phase_name, "medium")
     return get_thinking_budget(thinking_level)
+
+
+def get_feature_model(
+    spec_dir: Path,
+    feature: Feature,
+) -> str:
+    """
+    Get the resolved model ID for a specific feature.
+
+    Priority:
+    1. Feature-specific config from task_metadata.json
+    2. Default feature configuration
+
+    Args:
+        spec_dir: Path to the spec directory
+        feature: Feature name (insights, ideation, roadmap, reviewer)
+
+    Returns:
+        Resolved full model ID
+    """
+    # Load task metadata
+    metadata = load_task_metadata(spec_dir)
+
+    if metadata and metadata.get("featureModels"):
+        feature_models = metadata["featureModels"]
+        model = feature_models.get(feature, DEFAULT_FEATURE_MODELS[feature])
+        return resolve_model_id(model)
+
+    # Fall back to default feature configuration
+    return resolve_model_id(DEFAULT_FEATURE_MODELS[feature])
+
+
+def get_feature_thinking(
+    spec_dir: Path,
+    feature: Feature,
+) -> str:
+    """
+    Get the thinking level for a specific feature.
+
+    Priority:
+    1. Feature-specific config from task_metadata.json
+    2. Default feature configuration
+
+    Args:
+        spec_dir: Path to the spec directory
+        feature: Feature name (insights, ideation, roadmap, reviewer)
+
+    Returns:
+        Thinking level string
+    """
+    # Load task metadata
+    metadata = load_task_metadata(spec_dir)
+
+    if metadata and metadata.get("featureThinking"):
+        feature_thinking = metadata["featureThinking"]
+        return feature_thinking.get(feature, DEFAULT_FEATURE_THINKING[feature])
+
+    # Fall back to default feature configuration
+    return DEFAULT_FEATURE_THINKING[feature]
+
+
+def get_feature_thinking_budget(
+    spec_dir: Path,
+    feature: Feature,
+) -> int | None:
+    """
+    Get the thinking budget tokens for a specific feature.
+
+    Args:
+        spec_dir: Path to the spec directory
+        feature: Feature name (insights, ideation, roadmap, reviewer)
+
+    Returns:
+        Token budget or None for no extended thinking
+    """
+    thinking_level = get_feature_thinking(spec_dir, feature)
+    return get_thinking_budget(thinking_level)
+
+
+def get_feature_config(
+    spec_dir: Path,
+    feature: Feature,
+) -> tuple[str, str, int | None]:
+    """
+    Get the full configuration for a specific feature.
+
+    Args:
+        spec_dir: Path to the spec directory
+        feature: Feature name (insights, ideation, roadmap, reviewer)
+
+    Returns:
+        Tuple of (model_id, thinking_level, thinking_budget)
+    """
+    model_id = get_feature_model(spec_dir, feature)
+    thinking_level = get_feature_thinking(spec_dir, feature)
+    thinking_budget = get_thinking_budget(thinking_level)
+
+    return model_id, thinking_level, thinking_budget
