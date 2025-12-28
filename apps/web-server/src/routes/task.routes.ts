@@ -195,6 +195,13 @@ function specInfoToTask(specInfo: SpecInfo, projectId: string, projectPath: stri
     }
   }
 
+  // Check if task is actually running (override filesystem status)
+  const runningTasks = agentService.getRunningTasks();
+  const isRunning = runningTasks.some(taskId => taskId.includes(specInfo.id));
+  if (isRunning && task.status !== 'human_review') {
+    task.status = 'in_progress';
+  }
+
   return task;
 }
 
@@ -471,6 +478,74 @@ router.get('/running/list', (_req: Request, res: Response) => {
   res.json({
     success: true,
     data: tasksInfo,
+  });
+});
+
+/**
+ * GET /tasks/:specId/logs
+ * Get logs for a task
+ */
+router.get('/:specId/logs', (_req: Request, res: Response) => {
+  // Return empty logs for now - full implementation would read from task log files
+  res.json({
+    success: true,
+    data: {
+      phases: {
+        planning: { status: 'idle', logs: [] },
+        coding: { status: 'idle', logs: [] },
+        validation: { status: 'idle', logs: [] },
+      },
+    },
+  });
+});
+
+/**
+ * POST /tasks/:specId/logs/watch
+ * Start watching logs for a task
+ */
+router.post('/:specId/logs/watch', (_req: Request, res: Response) => {
+  // Stub implementation - would set up WebSocket or polling in full version
+  res.json({
+    success: true,
+    data: { watching: true },
+  });
+});
+
+/**
+ * POST /tasks/:specId/logs/unwatch
+ * Stop watching logs for a task
+ */
+router.post('/:specId/logs/unwatch', (_req: Request, res: Response) => {
+  // Stub implementation
+  res.json({
+    success: true,
+    data: { watching: false },
+  });
+});
+
+/**
+ * POST /tasks/:specId/recover
+ * Recover a stuck task
+ */
+router.post('/:specId/recover', (req: Request, res: Response) => {
+  const { specId } = req.params;
+  const { autoRestart } = req.body;
+
+  // Find running tasks for this spec
+  const runningTasks = agentService.getRunningTasks();
+  const taskId = runningTasks.find(id => id.includes(specId));
+
+  if (taskId) {
+    // Stop the stuck task
+    agentService.stopTask(taskId);
+  }
+
+  res.json({
+    success: true,
+    data: {
+      recovered: true,
+      autoRestart: autoRestart || false,
+    },
   });
 });
 

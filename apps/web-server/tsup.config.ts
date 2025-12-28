@@ -35,6 +35,27 @@ function projectStoreShimPlugin(): Plugin {
 }
 
 /**
+ * Plugin to redirect claude-profile-manager imports to our shim
+ */
+function claudeProfileManagerShimPlugin(): Plugin {
+  const shimPath = path.resolve(__dirname, 'src/shims/claude-profile-manager.ts');
+
+  return {
+    name: 'claude-profile-manager-shim',
+    setup(build) {
+      // Match any import that includes 'claude-profile-manager'
+      build.onResolve({ filter: /claude-profile-manager/ }, (args) => {
+        // Only redirect if it's from the frontend directory
+        if (args.importer.includes('frontend')) {
+          return { path: shimPath };
+        }
+        return null;
+      });
+    },
+  };
+}
+
+/**
  * Plugin to redirect shared constants/types imports
  */
 function sharedModulesPlugin(): Plugin {
@@ -100,6 +121,7 @@ var __dirname = __dirname_fn(__filename);`,
 
   esbuildPlugins: [
     projectStoreShimPlugin(),
+    claudeProfileManagerShimPlugin(),
     sharedModulesPlugin(),
   ],
 

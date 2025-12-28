@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useProjectStore } from '../../../stores/project-store';
-import { checkTaskRunning, isIncompleteHumanReview, getTaskProgress } from '../../../stores/task-store';
+import { checkTaskRunning, isIncompleteHumanReview, getTaskProgress, loadTasks } from '../../../stores/task-store';
 import type { Task, TaskLogs, TaskLogPhase, WorktreeStatus, WorktreeDiff, MergeConflict, MergeStats, GitConflictInfo } from '../../../../shared/types';
 import { api } from '../../../client-api';
 
@@ -62,13 +62,13 @@ export function useTaskDetail({ task }: UseTaskDetailOptions) {
     let timeoutId: NodeJS.Timeout | undefined;
 
     if (isRunning && !hasCheckedRunning) {
-      // Wait 2 seconds before checking - gives process time to spawn and register
+      // Wait 10 seconds before checking - gives spec creation/process time to spawn
       timeoutId = setTimeout(() => {
         checkTaskRunning(task.id).then((actuallyRunning) => {
           setIsStuck(!actuallyRunning);
           setHasCheckedRunning(true);
         });
-      }, 2000);
+      }, 10000);
     } else if (!isRunning) {
       setIsStuck(false);
       setHasCheckedRunning(false);
@@ -126,6 +126,21 @@ export function useTaskDetail({ task }: UseTaskDetailOptions) {
       setWorktreeDiff(null);
     }
   }, [task.id, needsReview]);
+
+  // Poll for task updates when task is running to refresh subtask statuses
+  useEffect(() => {
+    if (!isRunning || !task.projectId) return;
+
+    // Refresh immediately when task starts
+    loadTasks(task.projectId);
+
+    // Then poll every 3 seconds while running
+    const pollInterval = setInterval(() => {
+      loadTasks(task.projectId);
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [isRunning, task.projectId]);
 
   // Load and watch phase logs
   useEffect(() => {

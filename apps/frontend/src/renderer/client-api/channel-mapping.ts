@@ -72,8 +72,8 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   'task:unarchive': { method: 'POST', path: '/tasks/{0}/unarchive', pathArgs: [0] },
 
   // Task logs
-  'task:logsGet': { method: 'GET', path: '/tasks/{0}/logs', pathArgs: [0] },
-  'task:logsWatch': { method: 'POST', path: '/tasks/{0}/logs/watch', pathArgs: [0] },
+  'task:logsGet': { method: 'GET', path: '/tasks/{1}/logs', pathArgs: [null, 1] },
+  'task:logsWatch': { method: 'POST', path: '/tasks/{1}/logs/watch', pathArgs: [null, 1] },
   'task:logsUnwatch': { method: 'POST', path: '/tasks/{0}/logs/unwatch', pathArgs: [0] },
 
   // ============================================================================
@@ -81,8 +81,8 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   // ============================================================================
   'terminal:create': { method: 'POST', path: '/terminals' },
   'terminal:destroy': { method: 'DELETE', path: '/terminals/{0}', pathArgs: [0] },
-  'terminal:resize': { method: 'POST', path: '/terminals/{0}/resize', pathArgs: [0] },
-  'terminal:invokeClaude': { method: 'POST', path: '/terminals/{0}/claude', pathArgs: [0] },
+  'terminal:resize': { method: 'POST', path: '/terminals/{0}/resize', pathArgs: [0], bodyParams: ['cols', 'rows'] },
+  'terminal:invokeClaude': { method: 'POST', path: '/terminals/{0}/claude', pathArgs: [0], bodyParams: ['cwd'] },
   'terminal:generateName': { method: 'POST', path: '/terminals/{0}/generate-name', pathArgs: [0] },
   'terminal:getSessions': { method: 'GET', path: '/terminals/sessions' },
   'terminal:restoreSession': { method: 'POST', path: '/terminals/sessions/{0}/restore', pathArgs: [0] },

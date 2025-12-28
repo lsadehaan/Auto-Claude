@@ -261,17 +261,18 @@ export class AgentService extends EventEmitter {
       return { success: false, error: 'Task is already running' };
     }
 
-    // For spec creation, we need to run the spec pipeline
-    // This typically runs via "claude /spec" but we can invoke Python directly
-    const runScript = path.join(this.backendPath, 'run.py');
+    // Use the spec_runner.py script for creating specs
+    const runScript = path.join(this.backendPath, 'runners', 'spec_runner.py');
+    if (!existsSync(runScript)) {
+      return { success: false, error: `Spec runner not found: ${runScript}` };
+    }
 
-    // Note: The actual spec creation command might differ
-    // For now, use a placeholder that creates the spec directory
     const args = [
       runScript,
-      '--create-spec',
       '--task', taskDescription,
       '--project-dir', projectPath,
+      '--auto-approve', // Skip human review checkpoint (UI handles approval)
+      '--no-build', // Don't auto-start build (UI will start it separately)
     ];
 
     if (options.complexity) {

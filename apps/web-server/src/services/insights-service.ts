@@ -2,8 +2,8 @@
  * Insights Service Wrapper
  *
  * Wraps the Electron insights-service to work in web-server context.
- * We can't import the service directly due to __dirname usage,
- * so we import the class and instantiate it with web-server config.
+ * The bundler redirects claude-profile-manager imports to our web-server shim,
+ * which allows the service to work without Electron.
  */
 
 import { InsightsService } from '../../../frontend/src/main/insights-service';

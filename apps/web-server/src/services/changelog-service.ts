@@ -2,8 +2,8 @@
  * Changelog Service Wrapper
  *
  * Wraps the Electron changelog-service to work in web-server context.
- * We can't import the service singleton directly due to __dirname usage,
- * so we import the class and instantiate it with web-server config.
+ * The bundler redirects claude-profile-manager imports to our web-server shim,
+ * which allows the service to work without Electron.
  */
 
 import { ChangelogService } from '../../../frontend/src/main/changelog';
