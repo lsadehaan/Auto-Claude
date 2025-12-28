@@ -177,7 +177,7 @@ interface PhaseLogSectionProps {
 function PhaseLogSection({ phase, phaseLog, isExpanded, onToggle, isTaskStuck, phaseConfig }: PhaseLogSectionProps) {
   const Icon = PHASE_ICONS[phase];
   const status = phaseLog?.status || 'pending';
-  const hasEntries = (phaseLog?.entries.length || 0) > 0;
+  const hasEntries = (phaseLog?.entries?.length || 0) > 0;
 
   const getStatusBadge = () => {
     switch (status) {
