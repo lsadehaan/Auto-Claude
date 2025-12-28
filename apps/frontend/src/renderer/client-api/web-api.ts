@@ -13,8 +13,15 @@ import { WebSocketClient } from './websocket-client';
 import { CHANNEL_TO_HTTP, buildPath, getRemainingArgs, type EndpointMapping } from './channel-mapping';
 
 // Get API URLs from environment or use defaults
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001/api';
-const WS_BASE_URL = (import.meta as any).env?.VITE_WS_URL || 'ws://localhost:3001';
+// In production, these are set to '' or '/api' (relative URLs)
+// In development, these are set to absolute localhost URLs
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL !== undefined
+  ? (import.meta as any).env.VITE_API_URL
+  : 'http://localhost:3001/api';
+
+const WS_BASE_URL = (import.meta as any).env?.VITE_WS_URL !== undefined
+  ? (import.meta as any).env.VITE_WS_URL
+  : 'ws://localhost:3001';
 
 // WebSocket client singleton
 let wsClient: WebSocketClient | null = null;
