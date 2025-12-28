@@ -56,6 +56,7 @@ from ui import (
 
 from .base import AUTO_CONTINUE_DELAY_SECONDS, HUMAN_INTERVENTION_FILE
 from .memory_manager import debug_memory_system_status, get_graphiti_context
+from .reviewer import review_task
 from .session import post_session_processing, run_agent_session
 from .utils import (
     find_phase_for_subtask,
@@ -66,6 +67,68 @@ from .utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+async def _run_final_task_review(
+    spec_dir: Path,
+    project_dir: Path,
+) -> tuple[bool, str]:
+    """
+    Run final task-level review before marking as human_review.
+
+    Returns:
+        (should_complete, reason) where should_complete indicates if task passed review
+    """
+    print()
+    print_status("Running final task review...", "progress")
+
+    try:
+        verdict = await review_task(spec_dir, project_dir)
+
+        if not verdict:
+            print_status("Review could not be completed - proceeding anyway", "warning")
+            return True, "Review unavailable"
+
+        result = verdict.get("verdict", "FAIL")
+        confidence = verdict.get("confidence", "low")
+        summary = verdict.get("summary", "No summary")
+
+        print_key_value("Final review", f"{result} ({confidence} confidence)")
+        print_key_value("Summary", summary)
+
+        if result == "PASS":
+            print_status("Task review PASSED - ready for human review", "success")
+            return True, summary
+        else:
+            print_status("Task review FAILED - needs more work", "error")
+            concerns = verdict.get("details", {}).get("concerns", [])
+            if concerns:
+                print("Concerns:")
+                for concern in concerns[:5]:  # Show max 5
+                    print(f"  - {concern}")
+
+            # Update implementation plan to indicate review failure
+            plan_file = spec_dir / "implementation_plan.json"
+            if plan_file.exists():
+                import json
+                from datetime import datetime, timezone
+
+                with open(plan_file) as f:
+                    plan = json.load(f)
+
+                plan["status"] = "qa_needed"
+                plan["review_verdict"] = verdict
+                plan["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+                with open(plan_file, "w") as f:
+                    json.dump(plan, f, indent=2)
+
+            return False, f"Review failed: {summary}"
+
+    except Exception as e:
+        logger.warning(f"Task review failed with exception: {e}")
+        print_status("Review failed - proceeding to completion", "warning")
+        return True, f"Review error: {e}"
 
 
 async def run_autonomous_agent(
@@ -387,23 +450,32 @@ async def run_autonomous_agent(
 
         # Handle session status
         if status == "complete":
-            print_build_complete_banner(spec_dir)
-            status_manager.update(state=BuildState.COMPLETE)
+            # Run final task review before marking complete
+            review_passed, review_reason = await _run_final_task_review(spec_dir, project_dir)
 
-            # End coding phase in task logger
-            if task_logger:
-                task_logger.end_phase(
-                    LogPhase.CODING,
-                    success=True,
-                    message="All subtasks completed successfully",
-                )
+            if review_passed:
+                print_build_complete_banner(spec_dir)
+                status_manager.update(state=BuildState.COMPLETE)
 
-            # Notify Linear that build is complete (moving to QA)
-            if linear_task and linear_task.task_id:
-                await linear_build_complete(spec_dir)
-                print_status("Linear notified: build complete, ready for QA", "success")
+                # End coding phase in task logger
+                if task_logger:
+                    task_logger.end_phase(
+                        LogPhase.CODING,
+                        success=True,
+                        message="All subtasks completed successfully",
+                    )
 
-            break
+                # Notify Linear that build is complete (moving to QA)
+                if linear_task and linear_task.task_id:
+                    await linear_build_complete(spec_dir)
+                    print_status("Linear notified: build complete, ready for QA", "success")
+
+                break
+            else:
+                print_status(f"Build not complete: {review_reason}", "error")
+                print_status("Continuing to next iteration for fixes...", "info")
+                await asyncio.sleep(AUTO_CONTINUE_DELAY_SECONDS)
+                # Don't break - continue to next iteration
 
         elif status == "exit":
             # Agent exited without marking complete - sync progress from reality
@@ -416,9 +488,16 @@ async def run_autonomous_agent(
                     "success"
                 )
                 if sync_result.get("status") == "human_review":
-                    print_build_complete_banner(spec_dir)
-                    status_manager.update(state=BuildState.COMPLETE)
-                    break
+                    # Run final task review before marking complete
+                    review_passed, review_reason = await _run_final_task_review(spec_dir, project_dir)
+
+                    if review_passed:
+                        print_build_complete_banner(spec_dir)
+                        status_manager.update(state=BuildState.COMPLETE)
+                        break
+                    else:
+                        print_status(f"Auto-synced build failed review: {review_reason}", "error")
+                        print_status("Task marked as qa_needed for manual review", "warning")
             else:
                 print_status("No completed work detected", "info")
             break

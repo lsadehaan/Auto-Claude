@@ -34,6 +34,7 @@ from ui import (
 )
 
 from .memory_manager import save_session_memory
+from .reviewer import review_subtask
 from .utils import (
     find_subtask_in_plan,
     get_commit_count,
@@ -104,6 +105,61 @@ async def post_session_processing(
 
     print_key_value("Subtask status", subtask_status)
     print_key_value("New commits", str(new_commits))
+
+    # === AUTOMATED SUBTASK REVIEW ===
+    # Run automated review to verify work was actually done
+    review_verdict = None
+    if new_commits > 0:
+        print()
+        print_status("Running automated subtask review...", "progress")
+        try:
+            review_verdict = await review_subtask(
+                spec_dir=spec_dir,
+                project_dir=project_dir,
+                subtask_id=subtask_id,
+                subtask_description=subtask.get("description", ""),
+                commit_before=commit_before,
+                commit_after=commit_after,
+            )
+
+            if review_verdict:
+                verdict = review_verdict.get("verdict", "FAIL")
+                confidence = review_verdict.get("confidence", "low")
+                summary = review_verdict.get("summary", "No summary")
+
+                print_key_value("Review verdict", f"{verdict} ({confidence} confidence)")
+                print_key_value("Review summary", summary)
+
+                # Override status based on review if needed
+                if verdict == "PASS" and subtask_status != "completed":
+                    print_status("Review PASSED - marking subtask as completed", "success")
+                    subtask_status = "completed"
+                    # Update the plan file
+                    subtask["status"] = "completed"
+                    from datetime import datetime, timezone
+                    subtask["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    subtask["notes"] = f"Auto-completed by reviewer: {summary}"
+                    plan_file = spec_dir / "implementation_plan.json"
+                    with open(plan_file, "w") as f:
+                        import json
+                        json.dump(plan, f, indent=2)
+                elif verdict == "FAIL" and subtask_status == "completed":
+                    print_status("Review FAILED - reverting completed status", "warning")
+                    subtask_status = "in_progress"
+                    # Update the plan file
+                    subtask["status"] = "in_progress"
+                    from datetime import datetime, timezone
+                    subtask["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    concerns = review_verdict.get("concerns", [])
+                    subtask["notes"] = f"Review failed: {', '.join(concerns)}"
+                    plan_file = spec_dir / "implementation_plan.json"
+                    with open(plan_file, "w") as f:
+                        import json
+                        json.dump(plan, f, indent=2)
+
+        except Exception as e:
+            logger.warning(f"Automated review failed: {e}")
+            print_status("Review failed - proceeding with agent status", "warning")
 
     if subtask_status == "completed":
         # Success! Record the attempt and good commit
