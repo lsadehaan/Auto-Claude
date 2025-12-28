@@ -16,7 +16,8 @@ import contextRoutes from './context.routes.js';
 import memoryRoutes from './memory.routes.js';
 import ollamaRoutes from './ollama.routes.js';
 import insightsRoutes from './insights.routes.js';
-import changelogRoutes from './changelog.routes.js';
+// DISABLED: Crashes server due to __dirname in ES modules
+// import changelogRoutes from './changelog.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -91,8 +92,8 @@ export function setupRoutes(): Router {
   // Linear routes
   router.use('/linear', linearRoutes);
 
-  // Changelog routes
-  router.use('/changelog', changelogRoutes);
+  // Changelog routes - DISABLED (crashes server)
+  // router.use('/changelog', changelogRoutes);
 
   // Context routes
   router.use('/context', contextRoutes);
