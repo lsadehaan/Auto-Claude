@@ -27,6 +27,7 @@ from progress import (
     print_build_complete_banner,
     print_progress_summary,
     print_session_header,
+    sync_progress_from_reality,
 )
 from prompt_generator import (
     format_context_for_prompt,
@@ -404,6 +405,24 @@ async def run_autonomous_agent(
 
             break
 
+        elif status == "exit":
+            # Agent exited without marking complete - sync progress from reality
+            print_status("Agent session ended - syncing progress...", "progress")
+            sync_result = sync_progress_from_reality(spec_dir, project_dir)
+            if sync_result.get("synced"):
+                print_status(
+                    f"Progress synced: {sync_result['completed']}/{sync_result['total']} subtasks complete "
+                    f"({sync_result['evidence']['commit_count']} commits detected)",
+                    "success"
+                )
+                if sync_result.get("status") == "human_review":
+                    print_build_complete_banner(spec_dir)
+                    status_manager.update(state=BuildState.COMPLETE)
+                    break
+            else:
+                print_status("No completed work detected", "info")
+            break
+
         elif status == "continue":
             print(
                 muted(
@@ -453,6 +472,21 @@ async def run_autonomous_agent(
     print()
     print(box(content, width=70, style="heavy"))
     print_progress_summary(spec_dir)
+
+    # Final progress sync - ensure UI reflects reality
+    print()
+    print_status("Performing final progress sync...", "progress")
+    sync_result = sync_progress_from_reality(spec_dir, project_dir)
+    if sync_result.get("synced"):
+        print_status(
+            f"✓ Progress synced: {sync_result['completed']}/{sync_result['total']} complete",
+            "success"
+        )
+    else:
+        completed = sync_result.get("completed", 0)
+        total = sync_result.get("total", 0)
+        if completed > 0:
+            print_status(f"Progress already accurate: {completed}/{total} complete", "info")
 
     # Show stuck subtasks if any
     stuck_subtasks = recovery_manager.get_stuck_subtasks()

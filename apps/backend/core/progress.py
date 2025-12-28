@@ -465,3 +465,124 @@ def format_duration(seconds: float) -> str:
     else:
         hours = seconds / 3600
         return f"{hours:.1f}h"
+
+
+def sync_progress_from_reality(spec_dir: Path, project_dir: Path) -> dict:
+    """
+    Sync implementation_plan.json status with actual work done.
+
+    This is a foolproof fallback when the agent doesn't properly update subtask status.
+    It checks for actual evidence of work (git commits, file changes) and marks subtasks
+    as completed accordingly.
+
+    Args:
+        spec_dir: Path to spec directory
+        project_dir: Path to project root
+
+    Returns:
+        Dict with sync results: {synced: bool, completed: int, total: int, status: str}
+    """
+    import subprocess
+    from datetime import datetime, timezone
+
+    plan_file = spec_dir / "implementation_plan.json"
+    if not plan_file.exists():
+        return {"synced": False, "error": "No implementation_plan.json found"}
+
+    try:
+        with open(plan_file) as f:
+            plan = json.load(f)
+    except json.JSONDecodeError:
+        return {"synced": False, "error": "Invalid JSON in implementation_plan.json"}
+
+    # Check for evidence of work
+    spec_id = spec_dir.name
+    worktree_path = project_dir / ".worktrees" / spec_id
+    branch_name = f"auto-claude/{spec_id}"
+
+    work_evidence = {
+        "has_commits": False,
+        "has_files": False,
+        "build_progress_exists": False,
+        "commit_count": 0
+    }
+
+    # Check for git commits on the feature branch
+    try:
+        result = subprocess.run(
+            ["git", "rev-list", "--count", branch_name],
+            cwd=str(project_dir),
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            commit_count = int(result.stdout.strip())
+            work_evidence["commit_count"] = commit_count
+            work_evidence["has_commits"] = commit_count > 0
+    except (subprocess.SubprocessError, ValueError):
+        pass
+
+    # Check for files in worktree
+    if worktree_path.exists():
+        work_evidence["has_files"] = any(worktree_path.iterdir())
+
+    # Check for build progress file
+    build_progress = worktree_path / ".auto-claude" / "specs" / spec_id / "build-progress.txt"
+    if build_progress.exists():
+        work_evidence["build_progress_exists"] = True
+
+    # Determine if work is actually complete
+    phases = plan.get("phases", [])
+    total_subtasks = sum(len(p.get("subtasks", [])) for p in phases)
+
+    # If there's significant work done (commits exist), mark subtasks as complete
+    if work_evidence["has_commits"] and work_evidence["commit_count"] > 0:
+        # Mark all subtasks as completed since work was clearly done
+        now = datetime.now(timezone.utc).isoformat()
+        completed_count = 0
+
+        for phase in phases:
+            for subtask in phase.get("subtasks", []):
+                # Only update if currently pending or in_progress
+                current_status = subtask.get("status", "pending")
+                if current_status in ["pending", "in_progress"]:
+                    # Use either 'id' or 'subtask_id' field
+                    subtask_id = subtask.get("id") or subtask.get("subtask_id", "unknown")
+                    subtask["status"] = "completed"
+                    subtask["updated_at"] = now
+                    subtask["notes"] = f"Auto-synced: {work_evidence['commit_count']} commits detected"
+                    completed_count += 1
+
+        # Update plan metadata
+        plan["status"] = "human_review"
+        plan["updated_at"] = now
+        plan["last_updated"] = now
+
+        # Save updated plan
+        with open(plan_file, "w") as f:
+            json.dump(plan, f, indent=2)
+
+        return {
+            "synced": True,
+            "completed": total_subtasks,
+            "total": total_subtasks,
+            "status": "human_review",
+            "evidence": work_evidence,
+            "auto_completed": completed_count
+        }
+
+    # No work evidence found - don't change status
+    completed = sum(
+        1 for phase in phases
+        for subtask in phase.get("subtasks", [])
+        if subtask.get("status") == "completed"
+    )
+
+    return {
+        "synced": False,
+        "completed": completed,
+        "total": total_subtasks,
+        "status": plan.get("status", "in_progress"),
+        "evidence": work_evidence
+    }
