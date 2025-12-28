@@ -108,7 +108,7 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   'claude:profileSetActive': { method: 'POST', path: '/claude/profiles/{0}/activate', pathArgs: [0] },
   'claude:profileSwitch': { method: 'POST', path: '/claude/profiles/{0}/switch', pathArgs: [0] },
   'claude:profileInitialize': { method: 'POST', path: '/claude/profiles/{0}/initialize', pathArgs: [0] },
-  'claude:profileSetToken': { method: 'POST', path: '/claude/profiles/{0}/token', pathArgs: [0] },
+  'claude:profileSetToken': { method: 'POST', path: '/claude/profiles/{0}/token', pathArgs: [0], bodyParams: ['token', 'email'] },
   'claude:autoSwitchSettings': { method: 'GET', path: '/claude/auto-switch' },
   'claude:updateAutoSwitch': { method: 'PUT', path: '/claude/auto-switch' },
   'claude:fetchUsage': { method: 'GET', path: '/claude/profiles/{0}/usage', pathArgs: [0] },
