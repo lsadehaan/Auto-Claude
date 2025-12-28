@@ -15,6 +15,8 @@ import ideationRoutes from './ideation.routes.js';
 import contextRoutes from './context.routes.js';
 import memoryRoutes from './memory.routes.js';
 import ollamaRoutes from './ollama.routes.js';
+import insightsRoutes from './insights.routes.js';
+import changelogRoutes from './changelog.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -80,10 +82,8 @@ export function setupRoutes(): Router {
   // Ideation routes
   router.use('/ideation', ideationRoutes);
 
-  // Insights routes (placeholder - needs Claude integration)
-  router.use('/insights', (_req, res) => {
-    res.json({ success: false, error: 'Insights requires Claude integration' });
-  });
+  // Insights routes
+  router.use('/insights', insightsRoutes);
 
   // GitHub routes
   router.use('/github', githubRoutes);
@@ -91,10 +91,8 @@ export function setupRoutes(): Router {
   // Linear routes
   router.use('/linear', linearRoutes);
 
-  // Changelog routes (placeholder)
-  router.use('/changelog', (_req, res) => {
-    res.json({ success: false, error: 'Changelog generation not yet implemented' });
-  });
+  // Changelog routes
+  router.use('/changelog', changelogRoutes);
 
   // Context routes
   router.use('/context', contextRoutes);

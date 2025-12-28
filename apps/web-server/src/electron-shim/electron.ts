@@ -137,6 +137,37 @@ export const shell = {
 };
 
 /**
+ * Shim for Electron's 'safeStorage' object
+ * In web server context, we don't have access to OS keychain,
+ * so we return false for isEncryptionAvailable and provide no-op implementations
+ */
+export const safeStorage = {
+  /**
+   * Check if encryption is available
+   * Always false in web server context
+   */
+  isEncryptionAvailable(): boolean {
+    return false;
+  },
+
+  /**
+   * Encrypt a string (no-op in web server - returns empty buffer)
+   */
+  encryptString(_plainText: string): Buffer {
+    console.warn('[Electron Shim] safeStorage.encryptString called - encryption not available in web server');
+    return Buffer.from('');
+  },
+
+  /**
+   * Decrypt a buffer (no-op in web server - returns empty string)
+   */
+  decryptString(_encrypted: Buffer): string {
+    console.warn('[Electron Shim] safeStorage.decryptString called - encryption not available in web server');
+    return '';
+  },
+};
+
+/**
  * Shim for Electron's 'ipcMain' object
  * In web server, we use Express routes instead of IPC
  */
@@ -191,4 +222,5 @@ export default {
   app,
   shell,
   ipcMain,
+  safeStorage,
 };
