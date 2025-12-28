@@ -8,6 +8,7 @@ import { EventEmitter } from 'events';
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { homedir } from 'os';
 import { config } from '../config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -150,6 +151,37 @@ export class AgentService extends EventEmitter {
   }
 
   /**
+   * Get the Claude OAuth token from settings, config, or backend .env
+   */
+  private getOAuthToken(): string | null {
+    // First check global settings
+    const settingsPath = path.join(homedir(), '.auto-claude', 'settings.json');
+    if (existsSync(settingsPath)) {
+      try {
+        const settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
+        if (settings.globalClaudeOAuthToken) {
+          return settings.globalClaudeOAuthToken;
+        }
+      } catch {
+        // Ignore errors reading settings
+      }
+    }
+
+    // Fall back to config (from environment variable)
+    if (config.claudeOAuthToken) {
+      return config.claudeOAuthToken;
+    }
+
+    // Finally check backend .env
+    const backendEnv = this.loadBackendEnv();
+    if (backendEnv['CLAUDE_CODE_OAUTH_TOKEN']) {
+      return backendEnv['CLAUDE_CODE_OAUTH_TOKEN'];
+    }
+
+    return null;
+  }
+
+  /**
    * Start a task execution
    */
   startTask(
@@ -238,8 +270,8 @@ export class AgentService extends EventEmitter {
     try {
       const backendEnv = this.loadBackendEnv();
 
-      // Ensure we have the OAuth token
-      const oauthToken = config.claudeOAuthToken || backendEnv['CLAUDE_CODE_OAUTH_TOKEN'];
+      // Ensure we have the OAuth token (check settings, config, and backend .env)
+      const oauthToken = this.getOAuthToken();
       if (!oauthToken) {
         return { success: false, error: 'CLAUDE_CODE_OAUTH_TOKEN not configured' };
       }
@@ -503,7 +535,7 @@ export class AgentService extends EventEmitter {
   ): { success: boolean; error?: string } {
     try {
       const backendEnv = this.loadBackendEnv();
-      const oauthToken = config.claudeOAuthToken || backendEnv['CLAUDE_CODE_OAUTH_TOKEN'];
+      const oauthToken = this.getOAuthToken();
 
       if (!oauthToken) {
         return { success: false, error: 'CLAUDE_CODE_OAUTH_TOKEN not configured' };
@@ -735,7 +767,7 @@ export class AgentService extends EventEmitter {
   ): { success: boolean; error?: string } {
     try {
       const backendEnv = this.loadBackendEnv();
-      const oauthToken = config.claudeOAuthToken || backendEnv['CLAUDE_CODE_OAUTH_TOKEN'];
+      const oauthToken = this.getOAuthToken();
 
       if (!oauthToken) {
         return { success: false, error: 'CLAUDE_CODE_OAUTH_TOKEN not configured' };
