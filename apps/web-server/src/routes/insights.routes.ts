@@ -178,6 +178,17 @@ const createTaskHandler = async (req, res) => {
     const metadataPath = path.join(specDir, 'task_metadata.json');
     writeFileSync(metadataPath, JSON.stringify(taskMetadata, null, 2));
 
+    // Create spec.md (required by Python backend validation)
+    const specContent = `# ${title}
+
+${description}
+
+## Source
+This task was created from the Insights panel.
+`;
+    const specPath = path.join(specDir, 'spec.md');
+    writeFileSync(specPath, specContent);
+
     // Create the task object
     const task = {
       id: specId,
