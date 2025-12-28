@@ -51,7 +51,7 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   // Task Operations
   // ============================================================================
   'task:list': { method: 'GET', path: '/tasks', queryParams: ['projectId', 'projectPath'] },
-  'task:create': { method: 'POST', path: '/tasks', bodyParams: ['projectId', 'projectPath', 'title', 'description', 'complexity'] },
+  'task:create': { method: 'POST', path: '/tasks' },
   'task:delete': { method: 'DELETE', path: '/tasks/{0}', pathArgs: [0] },
   'task:update': { method: 'PUT', path: '/tasks/{0}', pathArgs: [0] },
   'task:start': { method: 'POST', path: '/tasks/{0}/start', pathArgs: [0], bodyParams: ['projectPath', 'autoContinue', 'maxIterations'] },
