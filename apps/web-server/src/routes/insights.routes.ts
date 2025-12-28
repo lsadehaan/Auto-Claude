@@ -167,7 +167,7 @@ const createTaskHandler = async (req, res) => {
       description: description,
       created_at: now,
       updated_at: now,
-      status: 'pending',
+      status: 'backlog',
       phases: []
     };
 
