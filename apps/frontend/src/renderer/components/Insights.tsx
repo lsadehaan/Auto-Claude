@@ -88,7 +88,7 @@ export function Insights({ projectId }: InsightsProps) {
 
   const handleSend = () => {
     const message = inputValue.trim();
-    if (!message || status.phase === 'thinking' || status.phase === 'streaming') return;
+    if (!message || status?.phase === 'thinking' || status?.phase === 'streaming') return;
 
     setInputValue('');
     sendMessage(projectId, message);
@@ -285,7 +285,7 @@ export function Insights({ projectId }: InsightsProps) {
             )}
 
             {/* Thinking indicator */}
-            {status.phase === 'thinking' && !streamingContent && !currentTool && (
+            {status?.phase === 'thinking' && !streamingContent && !currentTool && (
               <div className="flex gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
                   <Bot className="h-4 w-4 text-primary" />
@@ -298,7 +298,7 @@ export function Insights({ projectId }: InsightsProps) {
             )}
 
             {/* Error message */}
-            {status.phase === 'error' && status.error && (
+            {status?.phase === 'error' && status?.error && (
               <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 {status.error}
