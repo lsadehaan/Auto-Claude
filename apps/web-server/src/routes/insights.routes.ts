@@ -196,6 +196,16 @@ This task was created from the Insights panel.
     const specPath = path.join(specDir, 'spec.md');
     writeFileSync(specPath, specContent);
 
+    // Create review_state.json (auto-approve tasks from Insights)
+    const reviewState = {
+      approved: true,
+      approved_at: now,
+      approved_by: 'insights-auto-approve',
+      spec_hash: null  // Will be calculated on first build
+    };
+    const reviewStatePath = path.join(specDir, 'review_state.json');
+    writeFileSync(reviewStatePath, JSON.stringify(reviewState, null, 2));
+
     // Create the task object
     const task = {
       id: specId,
