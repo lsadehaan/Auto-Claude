@@ -8,9 +8,13 @@
 
 import { InsightsService } from '../../../frontend/src/main/insights-service';
 import { config } from '../config.js';
+import path from 'path';
 
 // Create service instance with web-server configuration
 export const insightsService = new InsightsService();
 
-// The service will use our shimmed 'app' object for path resolution
-// which points to config.dataPath and config.backendPath
+// Configure with venv Python and backend path
+const venvPython = path.join(config.backendPath || '', '.venv', 'bin', 'python3');
+const backendPath = config.backendPath || '';
+
+insightsService.configure(venvPython, backendPath);
