@@ -150,7 +150,7 @@ export function Insights({ projectId }: InsightsProps) {
     }
   };
 
-  const isLoading = status.phase === 'thinking' || status.phase === 'streaming';
+  const isLoading = status?.phase === 'thinking' || status?.phase === 'streaming';
   const messages = session?.messages || [];
 
   return (
