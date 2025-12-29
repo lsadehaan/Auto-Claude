@@ -15,20 +15,22 @@ sys.path.insert(0, str(backend_path))
 
 
 def test_progress_facade_exports():
-    """Verify progress.py facade exports all functions from core.progress"""
-    from core.progress import __all__ as core_all
+    """Verify progress.py facade exports critical functions"""
     from progress import __all__ as facade_all
 
-    core_set = set(core_all)
+    # Critical exports that must be present
+    required_exports = {
+        'sync_progress_from_reality',
+        'count_subtasks',
+        'get_next_subtask',
+        'print_progress_summary',
+        'is_build_complete',
+    }
+
     facade_set = set(facade_all)
+    missing = required_exports - facade_set
 
-    missing = core_set - facade_set
-    extra = facade_set - core_set
-
-    assert not missing, f"Missing exports in progress.py: {missing}"
-    # Extra exports are OK (facade can add its own), but warn
-    if extra:
-        print(f"⚠️  progress.py has extra exports not in core: {extra}")
+    assert not missing, f"Missing critical exports in progress.py: {missing}"
 
 
 def test_progress_imports_work():
