@@ -469,7 +469,28 @@ export async function deleteTask(
   const store = useTaskStore.getState();
 
   try {
-    const result = await api.deleteTask(taskId);
+    // Get task to find its projectId
+    const task = store.tasks.find(t => t.id === taskId || t.specId === taskId);
+    if (!task) {
+      return {
+        success: false,
+        error: 'Task not found'
+      };
+    }
+
+    // Get project path
+    const { useProjectStore } = await import('./project-store');
+    const projectStore = useProjectStore.getState();
+    const project = projectStore.projects.find(p => p.id === task.projectId);
+
+    if (!project) {
+      return {
+        success: false,
+        error: 'Project not found'
+      };
+    }
+
+    const result = await api.deleteTask(taskId, project.path);
 
     if (result.success) {
       // Remove from local state
