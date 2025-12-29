@@ -18,6 +18,7 @@ from core.progress import (
     print_paused_banner,
     print_progress_summary,
     print_session_header,
+    sync_progress_from_reality,
 )
 
 __all__ = [
@@ -33,4 +34,5 @@ __all__ = [
     "print_paused_banner",
     "print_progress_summary",
     "print_session_header",
+    "sync_progress_from_reality",
 ]
