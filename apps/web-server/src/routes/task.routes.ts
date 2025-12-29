@@ -384,6 +384,69 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 /**
+ * PUT /tasks/:specId
+ * Update a task
+ */
+router.put('/:specId', (req: Request, res: Response) => {
+  // Stub implementation - would update task metadata
+  res.json({
+    success: true,
+    data: req.body,
+  });
+});
+
+/**
+ * GET /tasks/:specId/review
+ * Get task review information
+ */
+router.get('/:specId/review', (req: Request, res: Response) => {
+  // Stub implementation - would return review data
+  res.json({
+    success: true,
+    data: {
+      reviewed: false,
+      comments: [],
+    },
+  });
+});
+
+/**
+ * PUT /tasks/:specId/status
+ * Update task status
+ */
+router.put('/:specId/status', (req: Request, res: Response) => {
+  // Stub implementation - status is managed through spec directory files
+  res.json({
+    success: true,
+    data: { status: req.body.status },
+  });
+});
+
+/**
+ * POST /tasks/:specId/archive
+ * Archive a task
+ */
+router.post('/:specId/archive', (req: Request, res: Response) => {
+  // Stub implementation - would move spec to archive folder
+  res.json({
+    success: true,
+    data: { archived: true },
+  });
+});
+
+/**
+ * POST /tasks/:specId/unarchive
+ * Unarchive a task
+ */
+router.post('/:specId/unarchive', (req: Request, res: Response) => {
+  // Stub implementation - would restore spec from archive
+  res.json({
+    success: true,
+    data: { archived: false },
+  });
+});
+
+/**
  * POST /tasks/:specId/start
  * Start executing a spec
  */
@@ -611,6 +674,54 @@ router.post('/:specId/logs/unwatch', (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to stop watching',
+    });
+  }
+});
+
+/**
+ * DELETE /tasks/:specId
+ * Delete a task and its spec directory
+ */
+router.delete('/:specId', async (req: Request, res: Response) => {
+  const { specId } = req.params;
+  const projectPath = req.query.projectPath as string;
+
+  if (!projectPath) {
+    return res.json({
+      success: false,
+      error: 'Project path is required',
+    });
+  }
+
+  try {
+    // Check if task is currently running
+    const runningTasks = agentService.getRunningTasks();
+    const isRunning = runningTasks.some(id => id.includes(specId));
+
+    if (isRunning) {
+      return res.json({
+        success: false,
+        error: 'Cannot delete a running task. Stop the task first.',
+      });
+    }
+
+    // Delete the spec directory
+    const specDir = path.join(projectPath, '.auto-claude', 'specs', specId);
+
+    if (existsSync(specDir)) {
+      const { rm } = await import('fs/promises');
+      await rm(specDir, { recursive: true, force: true });
+      console.log(`[TaskRoutes] Deleted spec directory: ${specDir}`);
+    }
+
+    res.json({
+      success: true,
+    });
+  } catch (error) {
+    console.error('[TaskRoutes] Error deleting task:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete task',
     });
   }
 });
