@@ -391,25 +391,38 @@ router.post('/:specId/start', (req: Request, res: Response) => {
     });
   }
 
-  // Generate task ID
-  const taskId = `exec-${specId}-${Date.now()}`;
+  try {
+    // Generate task ID
+    const taskId = `exec-${specId}-${Date.now()}`;
+    console.log('[TaskRoutes] Generated taskId:', taskId);
 
-  const result = agentService.startTask(taskId, projectPath, specId, {
-    autoContinue,
-    maxIterations,
-  });
+    const result = agentService.startTask(taskId, projectPath, specId, {
+      autoContinue,
+      maxIterations,
+    });
 
-  if (!result.success) {
-    return res.json({
+    console.log('[TaskRoutes] startTask result:', result);
+
+    if (!result.success) {
+      console.error('[TaskRoutes] startTask failed:', result.error);
+      return res.json({
+        success: false,
+        error: result.error,
+      });
+    }
+
+    console.log('[TaskRoutes] Task started successfully:', taskId);
+    res.json({
+      success: true,
+      data: { taskId },
+    });
+  } catch (error) {
+    console.error('[TaskRoutes] Exception in start handler:', error);
+    res.status(500).json({
       success: false,
-      error: result.error,
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
-
-  res.json({
-    success: true,
-    data: { taskId },
-  });
 });
 
 /**

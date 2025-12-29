@@ -305,14 +305,30 @@ export class AgentService extends EventEmitter {
     args: string[],
     processType: ProcessType
   ): { success: boolean; error?: string } {
+    console.log(`[AgentService] spawnProcess called:`, {
+      taskId,
+      projectPath,
+      specId,
+      processType,
+      pythonPath: this.pythonPath,
+      argsLength: args.length
+    });
+
     try {
       const backendEnv = this.loadBackendEnv();
 
       // Ensure we have the OAuth token (check settings, config, and backend .env)
       const oauthToken = this.getOAuthToken();
       if (!oauthToken) {
+        console.error('[AgentService] Missing OAuth token');
         return { success: false, error: 'CLAUDE_CODE_OAUTH_TOKEN not configured' };
       }
+
+      console.log(`[AgentService] Spawning Python process:`, {
+        python: this.pythonPath,
+        cwd: projectPath,
+        args: args.slice(0, 5) // Log first 5 args only
+      });
 
       const childProcess = spawn(this.pythonPath, args, {
         cwd: projectPath,
@@ -392,6 +408,14 @@ export class AgentService extends EventEmitter {
       return { success: true };
 
     } catch (error) {
+      console.error('[AgentService] Failed to spawn process:', error);
+      console.error('[AgentService] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        pythonPath: this.pythonPath,
+        projectPath,
+        processType
+      });
       const message = error instanceof Error ? error.message : 'Failed to spawn process';
       return { success: false, error: message };
     }
