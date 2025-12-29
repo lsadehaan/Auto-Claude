@@ -58,7 +58,7 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   'task:stop': { method: 'POST', path: '/tasks/{0}/stop', pathArgs: [0], bodyParams: ['taskId'] },
   'task:review': { method: 'GET', path: '/tasks/{0}/review', pathArgs: [0] },
   'task:updateStatus': { method: 'PUT', path: '/tasks/{0}/status', pathArgs: [0] },
-  'task:recoverStuck': { method: 'POST', path: '/tasks/{0}/recover', pathArgs: [0], bodyParams: ['autoRestart'] },
+  'task:recoverStuck': { method: 'POST', path: '/tasks/{0}/recover', pathArgs: [0], bodyParams: ['autoRestart', 'projectPath'] },
   'task:checkRunning': { method: 'GET', path: '/tasks/running/list' },
 
   // Worktree operations

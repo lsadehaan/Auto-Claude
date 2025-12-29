@@ -400,14 +400,49 @@ export async function recoverStuckTask(
   const store = useTaskStore.getState();
 
   try {
-    const result = await api.recoverStuckTask(taskId, options);
+    // Get task to find its projectId
+    const task = store.tasks.find(t => t.id === taskId || t.specId === taskId);
+    if (!task) {
+      console.error('[TaskStore] Cannot recover task - task not found:', taskId);
+      return {
+        success: false,
+        message: 'Task not found'
+      };
+    }
+
+    // Get project path for auto-restart
+    let projectPath: string | undefined;
+    if (options.autoRestart) {
+      const { useProjectStore } = await import('./project-store');
+      const projectStore = useProjectStore.getState();
+      const project = projectStore.projects.find(p => p.id === task.projectId);
+
+      if (!project) {
+        console.error('[TaskStore] Cannot recover task - project not found:', task.projectId);
+        return {
+          success: false,
+          message: 'Project not found'
+        };
+      }
+      projectPath = project.path;
+    }
+
+    const result = await api.recoverStuckTask(taskId, options.autoRestart || false, projectPath);
 
     if (result.success && result.data) {
-      // Update local state
-      store.updateTaskStatus(taskId, result.data.newStatus);
+      // Update local state if status was changed
+      if (result.data.newStatus) {
+        store.updateTaskStatus(taskId, result.data.newStatus);
+      }
+
+      // Refresh task list if auto-restarted
+      if (result.data.autoRestarted && task.projectId) {
+        await loadTasks(task.projectId);
+      }
+
       return {
         success: true,
-        message: result.data.message,
+        message: result.data.message || 'Task recovered successfully',
         autoRestarted: result.data.autoRestarted
       };
     }

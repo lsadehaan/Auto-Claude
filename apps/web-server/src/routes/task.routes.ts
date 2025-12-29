@@ -545,24 +545,72 @@ router.post('/:specId/logs/unwatch', (_req: Request, res: Response) => {
  */
 router.post('/:specId/recover', (req: Request, res: Response) => {
   const { specId } = req.params;
-  const { autoRestart } = req.body;
+  const { autoRestart, projectPath } = req.body;
 
-  // Find running tasks for this spec
-  const runningTasks = agentService.getRunningTasks();
-  const taskId = runningTasks.find(id => id.includes(specId));
+  console.log('[TaskRoutes] POST /:specId/recover called:', { specId, autoRestart, projectPath });
 
-  if (taskId) {
-    // Stop the stuck task
-    agentService.stopTask(taskId);
+  try {
+    // Find running tasks for this spec
+    const runningTasks = agentService.getRunningTasks();
+    const taskId = runningTasks.find(id => id.includes(specId));
+
+    if (taskId) {
+      // Stop the stuck task
+      console.log('[TaskRoutes] Stopping stuck task:', taskId);
+      agentService.stopTask(taskId);
+    }
+
+    // If autoRestart is enabled, start a new task
+    if (autoRestart) {
+      if (!projectPath) {
+        console.error('[TaskRoutes] autoRestart requested but no projectPath provided');
+        return res.json({
+          success: false,
+          error: 'Project path is required for auto-restart',
+        });
+      }
+
+      // Generate new task ID
+      const newTaskId = `exec-${specId}-${Date.now()}`;
+      console.log('[TaskRoutes] Auto-restarting task with new ID:', newTaskId);
+
+      const result = agentService.startTask(newTaskId, projectPath, specId, {
+        autoContinue: true,
+      });
+
+      if (!result.success) {
+        console.error('[TaskRoutes] Failed to auto-restart:', result.error);
+        return res.json({
+          success: false,
+          error: result.error,
+        });
+      }
+
+      console.log('[TaskRoutes] Task auto-restarted successfully');
+      return res.json({
+        success: true,
+        data: {
+          recovered: true,
+          autoRestart: true,
+          taskId: newTaskId,
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        recovered: true,
+        autoRestart: false,
+      },
+    });
+  } catch (error) {
+    console.error('[TaskRoutes] Exception in recover handler:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
-
-  res.json({
-    success: true,
-    data: {
-      recovered: true,
-      autoRestart: autoRestart || false,
-    },
-  });
 });
 
 export default router;
