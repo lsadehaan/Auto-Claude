@@ -56,6 +56,80 @@ app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });
 });
 
+// Backend health check - verifies Python backend can actually start (no auth required)
+app.get('/api/health/backend', async (_req, res) => {
+  try {
+    const { spawn } = await import('child_process');
+    const { pythonPath, backendPath } = config;
+
+    // Try to run a simple Python command that verifies imports work
+    const python = spawn(pythonPath, [
+      join(backendPath, 'run.py'),
+      '--help'
+    ], {
+      cwd: backendPath,
+      timeout: 10000
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    python.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    python.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    python.on('close', (code) => {
+      if (code === 0) {
+        res.json({
+          success: true,
+          data: {
+            healthy: true,
+            pythonPath,
+            backendPath,
+            message: 'Backend starts successfully'
+          }
+        });
+      } else {
+        res.status(503).json({
+          success: false,
+          data: {
+            healthy: false,
+            pythonPath,
+            backendPath,
+            error: stderr || 'Backend failed to start',
+            exitCode: code
+          }
+        });
+      }
+    });
+
+    python.on('error', (error) => {
+      res.status(503).json({
+        success: false,
+        data: {
+          healthy: false,
+          pythonPath,
+          backendPath,
+          error: error.message
+        }
+      });
+    });
+
+  } catch (error) {
+    res.status(503).json({
+      success: false,
+      data: {
+        healthy: false,
+        error: (error as Error).message
+      }
+    });
+  }
+});
+
 // Version endpoint (no auth required)
 app.get('/api/version', async (_req, res) => {
   try {

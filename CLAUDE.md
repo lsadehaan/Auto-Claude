@@ -30,6 +30,114 @@ ssh root@claude 'curl -s http://localhost:3001/api/health | grep timestamp'
 3. Server restart with new code
 4. Proper logging setup
 
+## CRITICAL: Preventing Recurring Deployment Issues
+
+**These checks MUST be followed to prevent repeated failures:**
+
+### Pre-Deployment Checklist (Local)
+
+Before deploying any backend changes, **ALWAYS run these checks locally**:
+
+```bash
+# 1. Verify all imports work
+cd apps/backend
+bash verify-deployment.sh
+
+# 2. Run import verification tests
+cd ../..
+apps/backend/.venv/bin/pytest tests/test_imports.py -v
+
+# 3. Commit changes
+git add .
+git commit -m "Your commit message"
+
+# 4. CRITICAL: Push to GitHub (don't forget this!)
+git push origin develop
+```
+
+### Common Mistakes That Cause Recurring Issues
+
+❌ **MISTAKE #1: Forgetting to push commits to GitHub**
+- **Symptom**: Server runs old code after "deployment"
+- **Why it happens**: `git pull` on server gets old code if you didn't push
+- **Fix**: ALWAYS verify `git push origin develop` succeeded before deploying
+
+❌ **MISTAKE #2: Adding functions to core/ without exporting from facades**
+- **Symptom**: `ImportError: cannot import name 'function_name'`
+- **Why it happens**: Agents import from `progress` not `core.progress`
+- **Fix**: When adding to `core/progress.py`, also update `progress.py` facade exports
+
+❌ **MISTAKE #3: Not restarting server after .env changes**
+- **Symptom**: Old Python path used, dependencies not found
+- **Why it happens**: Node.js only reads .env at startup
+- **Fix**: Always restart after .env changes: `ssh root@claude '/usr/local/bin/restart-web'`
+
+### Post-Deployment Verification
+
+After deploying, **ALWAYS verify health**:
+
+```bash
+# 1. Check basic health
+ssh root@claude 'curl -s http://localhost:3001/api/health'
+
+# 2. Check backend can start (catches ImportError)
+ssh root@claude 'curl -s http://localhost:3001/api/health/backend'
+
+# 3. Verify correct commit is deployed
+ssh root@claude 'cd /opt/auto-claude && git rev-parse --short HEAD'
+# Compare with: git rev-parse --short HEAD (local)
+```
+
+### Automated Deployment (Recommended)
+
+Use the automated script that includes all safety checks:
+
+```bash
+# On production server
+ssh root@claude 'bash /opt/auto-claude/scripts/deploy-production.sh'
+```
+
+This script automatically:
+1. Pulls latest code
+2. Runs `verify-deployment.sh`
+3. Restarts server
+4. Verifies health endpoints
+5. Aborts if any check fails
+
+### When Adding New Backend Functions
+
+**Checklist for adding new functions:**
+
+1. ✅ Add function to `core/` module (e.g., `core/progress.py`)
+2. ✅ Export function from facade module (e.g., `progress.py`)
+3. ✅ Update `__all__` list in both files
+4. ✅ Run `bash apps/backend/verify-deployment.sh` locally
+5. ✅ Commit changes
+6. ✅ **PUSH to GitHub** (`git push origin develop`)
+7. ✅ Deploy to server
+8. ✅ Verify backend health endpoint
+
+### If Backend Crashes on Server
+
+**Debugging workflow:**
+
+```bash
+# 1. Check what Python path is configured
+ssh root@claude 'grep PYTHON_PATH /opt/auto-claude/apps/web-server/.env'
+
+# 2. Test if Python backend can start manually
+ssh root@claude '/opt/auto-claude/apps/backend/.venv/bin/python3 /opt/auto-claude/apps/backend/run.py --help'
+
+# 3. Check for ImportError in output
+# Common: "ImportError: cannot import name 'X'" → forgot to export from facade
+
+# 4. Verify latest code is deployed
+ssh root@claude 'cd /opt/auto-claude && git log -1 --oneline'
+
+# 5. Check backend health endpoint for detailed error
+ssh root@claude 'curl -s http://localhost:3001/api/health/backend | python3 -m json.tool'
+```
+
 ## Project Overview
 
 Auto Claude is a multi-agent autonomous coding framework that builds software through coordinated AI agent sessions. It uses the Claude Code SDK to run agents in isolated workspaces with security controls.
