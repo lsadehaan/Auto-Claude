@@ -37,17 +37,27 @@ bash verify-deployment.sh || {
 }
 echo ""
 
-# Step 4: Build frontend if needed
-if [ -f "$DEPLOY_DIR/apps/frontend/package.json" ]; then
-    echo "🏗️  Building frontend..."
-    cd "$DEPLOY_DIR"
-    npm run web:build 2>&1 | tail -10 || {
-        echo "⚠️  Frontend build failed, but continuing..."
-    }
-    echo ""
-fi
+# Step 4: Build frontend React app
+echo "🏗️  Building frontend React app..."
+cd "$DEPLOY_DIR/apps/frontend"
+npx vite build --config vite.web.config.ts 2>&1 | tail -10 || {
+    echo "❌ Frontend build failed!"
+    exit 1
+}
+echo "  ✅ Frontend built"
+echo ""
 
-# Step 5: Restart web server
+# Step 5: Build web server backend
+echo "🏗️  Building web server backend..."
+cd "$DEPLOY_DIR"
+npm run web:build 2>&1 | tail -10 || {
+    echo "❌ Web server build failed!"
+    exit 1
+}
+echo "  ✅ Web server built"
+echo ""
+
+# Step 6: Restart web server
 echo "🔄 Restarting web server..."
 systemctl restart auto-claude-web 2>/dev/null || {
     # If systemd service doesn't exist, use manual restart
@@ -59,11 +69,11 @@ systemctl restart auto-claude-web 2>/dev/null || {
 echo "  ✅ Server restarted"
 echo ""
 
-# Step 6: Wait for server to start
+# Step 7: Wait for server to start
 echo "⏳ Waiting for server to start..."
 sleep 5
 
-# Step 7: Verify server is healthy
+# Step 8: Verify server is healthy
 echo "🏥 Checking server health..."
 curl -f http://localhost:3001/api/health > /dev/null 2>&1 || {
     echo "❌ Server health check failed!"
@@ -73,7 +83,7 @@ curl -f http://localhost:3001/api/health > /dev/null 2>&1 || {
 echo "  ✅ Server is healthy"
 echo ""
 
-# Step 8: Verify backend health
+# Step 9: Verify backend health
 echo "🏥 Checking backend health..."
 BACKEND_HEALTH=$(curl -s http://localhost:3001/api/health/backend)
 if echo "$BACKEND_HEALTH" | grep -q '"healthy":true'; then

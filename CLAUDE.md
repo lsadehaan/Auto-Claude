@@ -72,6 +72,12 @@ git push origin develop
 - **Why it happens**: Node.js only reads .env at startup
 - **Fix**: Always restart after .env changes: `ssh root@claude '/usr/local/bin/restart-web'`
 
+❌ **MISTAKE #4: Not rebuilding frontend after code changes**
+- **Symptom**: `Failed to load module script` with MIME type error in browser console
+- **Why it happens**: Frontend React app needs separate build with vite, not just tsup
+- **Fix**: Always rebuild frontend: `cd apps/frontend && npx vite build --config vite.web.config.ts`
+- **Note**: `npm run web:build` only builds web-server backend, NOT the frontend React app
+
 ### Post-Deployment Verification
 
 After deploying, **ALWAYS verify health**:
