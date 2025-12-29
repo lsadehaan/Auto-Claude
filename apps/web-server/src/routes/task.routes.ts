@@ -591,7 +591,7 @@ router.post('/:specId/recover', (req: Request, res: Response) => {
         success: true,
         data: {
           recovered: true,
-          autoRestart: true,
+          autoRestarted: true,
           taskId: newTaskId,
         },
       });
