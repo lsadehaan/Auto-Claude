@@ -149,7 +149,7 @@ export function useTaskDetail({ task }: UseTaskDetailOptions) {
     const loadLogs = async () => {
       setIsLoadingLogs(true);
       try {
-        const result = await api.getTaskLogs(selectedProject.id, task.specId);
+        const result = await api.getTaskLogs(task.specId, selectedProject.path);
         if (result.success && result.data) {
           setPhaseLogs(result.data);
           // Auto-expand active phase
@@ -170,7 +170,7 @@ export function useTaskDetail({ task }: UseTaskDetailOptions) {
     loadLogs();
 
     // Start watching for log changes
-    api.watchTaskLogs(selectedProject.id, task.specId);
+    api.watchTaskLogs(task.specId, selectedProject.path);
 
     // Listen for log changes
     const unsubscribe = api.onTaskLogsChanged((specId, logs) => {

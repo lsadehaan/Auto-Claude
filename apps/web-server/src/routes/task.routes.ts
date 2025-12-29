@@ -6,6 +6,7 @@
 import { Router, type Request, type Response } from 'express';
 import { agentService } from '../services/agent-service.js';
 import { eventBridge } from '../adapters/event-bridge.js';
+import { taskLogService } from '../services/task-log-service.js';
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import path from 'path';
 
@@ -30,6 +31,15 @@ agentService.on('error', (taskId: string, error: string) => {
 
 agentService.on('exit', (taskId: string, exitCode: number) => {
   eventBridge.broadcast('task:statusChange', taskId, exitCode === 0 ? 'completed' : 'failed');
+});
+
+// Wire task log events to the event bridge for WebSocket broadcast
+taskLogService.on('logs-changed', (specId: string, logs: any) => {
+  eventBridge.broadcast('task:logsChanged', specId, logs);
+});
+
+taskLogService.on('stream-chunk', (specId: string, chunk: any) => {
+  eventBridge.broadcast('task:logsStream', specId, chunk);
 });
 
 // ============================================================================
@@ -509,42 +519,100 @@ router.get('/running/list', (_req: Request, res: Response) => {
  * GET /tasks/:specId/logs
  * Get logs for a task
  */
-router.get('/:specId/logs', (_req: Request, res: Response) => {
-  // Return empty logs for now - full implementation would read from task log files
-  res.json({
-    success: true,
-    data: {
-      phases: {
-        planning: { status: 'idle', logs: [] },
-        coding: { status: 'idle', logs: [] },
-        validation: { status: 'idle', logs: [] },
-      },
-    },
-  });
+router.get('/:specId/logs', (req: Request, res: Response) => {
+  const { specId } = req.params;
+  const projectPath = req.query.projectPath as string;
+
+  if (!projectPath) {
+    return res.json({
+      success: false,
+      error: 'Project path is required',
+    });
+  }
+
+  try {
+    const logs = taskLogService.loadLogs(projectPath, specId);
+
+    if (!logs) {
+      // Return empty logs structure if no logs exist yet
+      return res.json({
+        success: true,
+        data: {
+          spec_id: specId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          phases: {
+            planning: { phase: 'planning', status: 'pending', started_at: null, completed_at: null, entries: [] },
+            coding: { phase: 'coding', status: 'pending', started_at: null, completed_at: null, entries: [] },
+            validation: { phase: 'validation', status: 'pending', started_at: null, completed_at: null, entries: [] },
+          },
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      data: logs,
+    });
+  } catch (error) {
+    console.error('[TaskRoutes] Error loading logs:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to load logs',
+    });
+  }
 });
 
 /**
  * POST /tasks/:specId/logs/watch
  * Start watching logs for a task
  */
-router.post('/:specId/logs/watch', (_req: Request, res: Response) => {
-  // Stub implementation - would set up WebSocket or polling in full version
-  res.json({
-    success: true,
-    data: { watching: true },
-  });
+router.post('/:specId/logs/watch', (req: Request, res: Response) => {
+  const { specId } = req.params;
+  const { projectPath } = req.body;
+
+  if (!projectPath) {
+    return res.json({
+      success: false,
+      error: 'Project path is required',
+    });
+  }
+
+  try {
+    taskLogService.startWatching(projectPath, specId);
+    res.json({
+      success: true,
+      data: { watching: true },
+    });
+  } catch (error) {
+    console.error('[TaskRoutes] Error starting log watch:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to start watching',
+    });
+  }
 });
 
 /**
  * POST /tasks/:specId/logs/unwatch
  * Stop watching logs for a task
  */
-router.post('/:specId/logs/unwatch', (_req: Request, res: Response) => {
-  // Stub implementation
-  res.json({
-    success: true,
-    data: { watching: false },
-  });
+router.post('/:specId/logs/unwatch', (req: Request, res: Response) => {
+  const { specId } = req.params;
+
+  try {
+    taskLogService.stopWatching(specId);
+    res.json({
+      success: true,
+      data: { watching: false },
+    });
+  } catch (error) {
+    console.error('[TaskRoutes] Error stopping log watch:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to stop watching',
+    });
+  }
 });
 
 /**

@@ -72,8 +72,8 @@ export const CHANNEL_TO_HTTP: Record<string, EndpointMapping> = {
   'task:unarchive': { method: 'POST', path: '/tasks/{0}/unarchive', pathArgs: [0] },
 
   // Task logs
-  'task:logsGet': { method: 'GET', path: '/tasks/{0}/logs', pathArgs: [0] },
-  'task:logsWatch': { method: 'POST', path: '/tasks/{0}/logs/watch', pathArgs: [0] },
+  'task:logsGet': { method: 'GET', path: '/tasks/{0}/logs', pathArgs: [0], queryParams: ['projectPath'] },
+  'task:logsWatch': { method: 'POST', path: '/tasks/{0}/logs/watch', pathArgs: [0], bodyParams: ['projectPath'] },
   'task:logsUnwatch': { method: 'POST', path: '/tasks/{0}/logs/unwatch', pathArgs: [0] },
 
   // ============================================================================
