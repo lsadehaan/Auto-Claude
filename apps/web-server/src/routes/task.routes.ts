@@ -450,32 +450,40 @@ router.post('/:specId/stop', (req: Request, res: Response) => {
 /**
  * GET /tasks/:specId/status
  * Get status of a running task
+ * If taskId is provided, checks that specific task
+ * If taskId is not provided, checks if ANY task for this spec is running
  */
 router.get('/:specId/status', (req: Request, res: Response) => {
+  const { specId } = req.params;
   const { taskId } = req.query;
 
-  if (!taskId) {
-    return res.json({
-      success: false,
-      error: 'Task ID is required',
-    });
-  }
+  // If taskId is provided, check that specific task
+  if (taskId) {
+    const info = agentService.getTaskInfo(taskId as string);
 
-  const info = agentService.getTaskInfo(taskId as string);
+    if (!info) {
+      return res.json({
+        success: true,
+        data: { running: false },
+      });
+    }
 
-  if (!info) {
     return res.json({
       success: true,
-      data: { running: false },
+      data: {
+        running: true,
+        ...info,
+      },
     });
   }
+
+  // If no taskId, check if ANY task for this spec is running
+  const runningTasks = agentService.getRunningTasks();
+  const isRunning = runningTasks.some(id => id.includes(specId));
 
   res.json({
     success: true,
-    data: {
-      running: true,
-      ...info,
-    },
+    data: { running: isRunning },
   });
 });
 

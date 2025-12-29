@@ -381,7 +381,7 @@ export async function persistUpdateTask(
 export async function checkTaskRunning(taskId: string): Promise<boolean> {
   try {
     const result = await api.checkTaskRunning(taskId);
-    return result.success && result.data === true;
+    return result.success && result.data?.running === true;
   } catch (error) {
     console.error('Error checking task running status:', error);
     return false;
