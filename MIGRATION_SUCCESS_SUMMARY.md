@@ -308,33 +308,36 @@ console.log('[electron-to-web] Installed stubs for', Object.keys(STUBS).length, 
 
 ## Immediate Next Steps for Auto-Claude
 
-### 1. Document Stub Creation
-Create `apps/web-server/README.md`:
-```markdown
-## Setup
+### 1. ✅ Document Stub Creation - COMPLETED
+Created comprehensive `apps/web-server/README.md` with:
+- Setup instructions with automated stub creation
+- Development and production build guides
+- Configuration documentation
+- Troubleshooting steps
+- Architecture overview
 
-After `npm install`, create runtime stubs:
+### 2. ✅ Create Stub Setup Script - COMPLETED
+Created `apps/web-server/scripts/create-stubs.js`:
+- Automated stub package creation
+- ESM-compatible package structure
+- Integrated with `postinstall` hook
+- Supports all three externalized packages
 
-\`\`\`bash
-npm run create-stubs
-\`\`\`
+### 3. ✅ Create Deployment Guide - COMPLETED
+Created `apps/web-server/DEPLOYMENT.md`:
+- Complete deployment workflow
+- PM2 and systemd examples
+- Nginx reverse proxy configuration
+- Verification checklist
+- Security and monitoring guidance
 
-Or manually create stub packages in node_modules/ (see scripts/create-stubs.js)
-```
-
-### 2. Create Stub Setup Script
-```javascript
-// apps/web-server/scripts/create-stubs.js
-// (See code in RUNTIME_SOLUTIONS_ANALYSIS.md - Solution 5)
-```
-
-### 3. Test IPC Communication
+### 4. Test IPC Communication
 - Build frontend for web
 - Test IPC calls from browser
 - Verify WebSocket connection
 - Test handler functionality
 
-### 4. Deploy to Server
+### 5. Deploy to Server
 - Push changes to GitHub
 - Deploy to `claude.praiaradical.com`
 - Test in production
@@ -415,6 +418,61 @@ This migration proves the electron-to-web concept and provides a roadmap for mak
 
 ---
 
+## Completed Automation (2026-01-03)
+
+### Scripts & Documentation Added
+
+1. **scripts/create-stubs.js** ✅
+   - Automated runtime stub creation
+   - Runs on `postinstall` hook
+   - Creates stubs for electron-log, electron-updater, @lydell/node-pty
+   - ESM-compatible package structure
+
+2. **README.md** ✅
+   - Complete setup guide
+   - Development workflow
+   - Production deployment steps
+   - Troubleshooting guide
+   - Architecture documentation
+
+3. **DEPLOYMENT.md** ✅
+   - Step-by-step deployment guide
+   - Process manager configurations (PM2, systemd)
+   - Nginx reverse proxy setup
+   - Security checklist
+   - Monitoring and rollback procedures
+
+### Package.json Updates ✅
+
+Added scripts:
+```json
+{
+  "postinstall": "node scripts/create-stubs.js",
+  "create-stubs": "node scripts/create-stubs.js"
+}
+```
+
+### Deployment Workflow
+
+**Fresh deployment now works with:**
+```bash
+git clone <repo>
+cd apps/web-server
+npm install        # Auto-creates stubs via postinstall
+npm run build      # Build successful
+npm start          # Server running
+```
+
+No manual stub creation required!
+
+---
+
 Generated: 2026-01-03
 Branch: `feat/electron-to-web-migration`
-Status: ✅ Ready for testing and deployment
+Status: ✅ **Ready for frontend build and IPC testing**
+
+### Next Phase: Frontend Web Build
+- Create vite.web.config.ts for frontend
+- Build React app for web deployment
+- Test IPC communication over WebSocket
+- Deploy to production server
