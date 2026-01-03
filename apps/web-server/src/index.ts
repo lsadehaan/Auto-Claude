@@ -3,8 +3,8 @@
  * Minimal implementation using electron-to-web
  */
 
-import { createWebServer, TRUSTED_SECURITY_CONFIG } from 'electron-to-web/server';
-import { BrowserWindow } from 'electron-to-web/main';
+import { createWebServer } from 'electron-to-web/server';
+import { BrowserWindow, TRUSTED_SECURITY_CONFIG } from 'electron-to-web/main';
 import { config, isDev } from './config.js';
 
 // Import existing Electron IPC setup from frontend
