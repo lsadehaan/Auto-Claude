@@ -17,7 +17,7 @@ export const config = {
   projectsDir: process.env.PROJECTS_DIR || join(process.cwd(), 'projects'),
 
   // Frontend dist path (where built React app lives)
-  frontendDistPath: join(process.cwd(), '../frontend/dist/web'),
+  frontendDistPath: join(process.cwd(), '../frontend/dist-web'),
 
   // Python backend path
   backendPath: join(process.cwd(), '../backend'),

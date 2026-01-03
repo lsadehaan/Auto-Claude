@@ -37,13 +37,28 @@ async function main() {
     security: TRUSTED_SECURITY_CONFIG,
   });
 
-  // Health check
-  app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok' });
+  // Additional API routes can go here
+  // app.get('/api/...', ...)
+
+  // SPA fallback - serve index.html for all routes
+  // This must come AFTER static file middleware and API routes
+  app.use((req, res) => {
+    // Only serve index.html for GET requests (not for API calls)
+    if (req.method === 'GET' && !req.path.startsWith('/api/') && !req.path.startsWith('/ipc')) {
+      res.sendFile('index.web.html', { root: config.frontendDistPath }, (err) => {
+        if (err) {
+          console.error('[Server] Error serving index.html:', err);
+          res.status(500).send('Server error');
+        }
+      });
+    } else {
+      res.status(404).send('Not found');
+    }
   });
 
   console.log(`Server running at http://${config.host}:${config.port}`);
   console.log(`IPC endpoint: ws://${config.host}:${config.port}/ipc`);
+  console.log(`Serving frontend from: ${config.frontendDistPath}`);
 }
 
 main().catch(console.error);
