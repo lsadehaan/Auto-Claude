@@ -5,6 +5,8 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
+    "postinstall": "node scripts/create-stubs.js",
+    "create-stubs": "node scripts/create-stubs.js",
     "dev": "tsx watch src/index.ts",
     "build": "tsup",
     "start": "node dist/index.js"
