@@ -8,8 +8,12 @@
     "strict": true,
     "skipLibCheck": true,
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "electron": ["../../node_modules/electron-to-web/main"]
+    }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../frontend/src/main/**/*"],
   "exclude": ["node_modules", "dist"]
 }

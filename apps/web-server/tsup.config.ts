@@ -8,4 +8,10 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   outDir: 'dist',
+  // Alias 'electron' to 'electron-to-web/main' so imported handlers work
+  esbuildOptions(options) {
+    options.alias = {
+      'electron': 'electron-to-web/main'
+    };
+  },
 });
