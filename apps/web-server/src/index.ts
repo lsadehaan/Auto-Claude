@@ -7,9 +7,10 @@ import { createWebServer } from 'electron-to-web/server';
 import { BrowserWindow, TRUSTED_SECURITY_CONFIG } from 'electron-to-web/main';
 import { config, isDev } from './config.js';
 
-// Import existing Electron IPC setup from frontend
+// Import web-specific Electron IPC setup from frontend
+// Uses ipc-setup.web.ts which excludes Electron-only handlers (electron-updater)
 // The 'electron' imports in these files will be aliased to 'electron-to-web/main'
-import { setupIpcHandlers } from '../../frontend/src/main/ipc-setup';
+import { setupIpcHandlers } from '../../frontend/src/main/ipc-setup.web';
 import { AgentManager } from '../../frontend/src/main/agent';
 import { TerminalManager } from '../../frontend/src/main/terminal-manager';
 import { PythonEnvManager } from '../../frontend/src/main/python-env-manager';
