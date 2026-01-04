@@ -11,7 +11,7 @@ Auto Claude is a multi-agent autonomous coding framework that builds software th
 ## Project Structure
 
 ```
-autonomous-coding/
+Auto-Claude/
 ├── apps/
 │   ├── backend/           # Python backend/CLI - ALL agent logic lives here
 │   │   ├── core/          # Client, auth, security
@@ -19,7 +19,14 @@ autonomous-coding/
 │   │   ├── spec_agents/   # Spec creation agents
 │   │   ├── integrations/  # Graphiti, Linear, GitHub
 │   │   └── prompts/       # Agent system prompts
-│   └── frontend/          # Electron desktop UI
+│   ├── frontend/          # Electron desktop UI + Web frontend
+│   │   ├── src/main/      # Electron main process
+│   │   ├── src/renderer/  # React UI (shared between Electron and Web)
+│   │   ├── src/preload/   # Electron preload scripts (+ web variants)
+│   │   └── dist-web/      # Web build output
+│   └── web-server/        # Node.js web server (electron-to-web)
+│       ├── src/           # Server entry point
+│       └── dist/          # Built server
 ├── guides/                # Documentation
 ├── tests/                 # Test suite
 └── scripts/               # Build and utility scripts
@@ -31,11 +38,20 @@ autonomous-coding/
 - Check `apps/backend/spec_agents/` for spec creation agent examples
 - NEVER use `anthropic.Anthropic()` directly - always use `create_client()` from `core.client`
 
-**Frontend (Electron Desktop App):**
-- Built with Electron, React, TypeScript
+**Frontend:**
+- Built with React, TypeScript
+- **Electron Desktop App** - Native desktop application
+- **Web App** - Browser-based version using electron-to-web
+- Single codebase deploys to both Electron and Web
 - AI agents can perform E2E testing using the Electron MCP server
 - When bug fixing or implementing features, use the Electron MCP server for automated testing
-- See "End-to-End Testing" section below for details
+- See "End-to-End Testing" and "Web Deployment" sections below
+
+**Web Server (electron-to-web):**
+- Node.js server that makes Electron IPC handlers work in the browser
+- Uses WebSocket + JSON-RPC for IPC communication
+- Zero changes to existing Electron code required
+- See `apps/web-server/` and "Web Deployment" section
 
 ## Commands
 
@@ -390,6 +406,63 @@ const { t } = useTranslation(['navigation', 'common']);
 2. Use `namespace:section.key` format (e.g., `navigation:items.githubPRs`)
 3. Never use hardcoded strings in JSX/TSX files
 
+### Web Deployment (electron-to-web)
+
+**IMPORTANT: Auto-Claude supports both Electron desktop and web browser deployment using a single codebase.**
+
+The web version uses the `electron-to-web` library to convert Electron IPC communication to WebSocket-based JSON-RPC. This allows **100% reuse** of existing Electron IPC handlers without code changes.
+
+**Architecture:**
+```
+Browser (React App)
+  ↓ ipcRenderer.invoke('task:create', data)
+  ↓ WebSocket (JSON-RPC)
+electron-to-web/renderer
+  ↓
+Web Server (Node.js)
+  ↓
+electron-to-web/main
+  ↓ ipcMain.handle('task:create', handler)
+Existing Electron IPC handlers (UNCHANGED)
+```
+
+**Key files for web deployment:**
+- `apps/frontend/src/preload/index.web.ts` - Web-compatible preload API
+- `apps/frontend/src/renderer/main.web.tsx` - Web entry point
+- `apps/frontend/vite.web.config.ts` - Vite config for web build
+- `apps/frontend/src/main/ipc-setup.web.ts` - Web-compatible IPC handlers (excludes Electron-specific features like auto-updater)
+- `apps/web-server/src/index.ts` - Web server entry point
+
+**Build configuration:**
+- Module aliasing: `'electron'` → `'electron-to-web/main'` (server) or `'electron-to-web/renderer'` (browser)
+- Externalized packages: `electron-log`, `electron-updater`, `@lydell/node-pty`
+- Runtime stubs created automatically by `apps/web-server/scripts/create-stubs.js`
+
+**Adding new IPC handlers:**
+1. Add handler in `apps/frontend/src/main/ipc/` (Electron code)
+2. Export from `apps/frontend/src/main/ipc-setup.ts` (Electron)
+3. Export from `apps/frontend/src/main/ipc-setup.web.ts` (Web) - ONLY if web-compatible
+4. Handler automatically works in both Electron and Web (no duplication needed)
+
+**Electron-specific features to avoid in web-compatible code:**
+- `electron-updater` (auto-updates)
+- `@lydell/node-pty` (terminal emulation requires native binaries)
+- `dialog.showOpenDialog()` (limited in browsers)
+- `shell.showItemInFolder()` (not possible in browsers)
+
+**Testing web deployment locally:**
+```bash
+# Build frontend
+cd apps/frontend && npm run build:web
+
+# Start web server
+cd apps/web-server && npm start
+
+# Open browser to http://localhost:3001
+```
+
+See `MIGRATION_SUCCESS_SUMMARY.md` for detailed migration documentation.
+
 ### End-to-End Testing (Electron App)
 
 **IMPORTANT: When bug fixing or implementing new features in the frontend, AI agents can perform automated E2E testing using the Electron MCP server.**
@@ -476,20 +549,72 @@ The client automatically enables Electron MCP tools for QA agents when:
 
 ## Running the Application
 
+### Desktop (Electron)
+
+**Development mode:**
+```bash
+npm run dev                    # Electron app with hot reload
+npm run dev:mcp                # With remote debugging for E2E testing
+```
+
+**Production build:**
+```bash
+npm start                      # Build and run desktop app
+npm run package                # Create installer for current platform
+npm run package:mac            # Package for macOS
+npm run package:win            # Package for Windows
+npm run package:linux          # Package for Linux
+```
+
+### Web Deployment
+
+**Build and run web version:**
+```bash
+# Build frontend for web
+cd apps/frontend
+npm run build:web              # Output: dist-web/
+
+# Build and run web server
+cd apps/web-server
+npm install                    # Auto-creates stubs via postinstall
+npm run build                  # Build server
+npm start                      # Start on port 3001
+
+# Or in development
+npm run dev                    # Watch mode with auto-restart
+```
+
+**Development with hot reload:**
+```bash
+# Terminal 1: Start web server
+cd apps/web-server
+npm run dev
+
+# Terminal 2: Start frontend dev server with proxy
+cd apps/frontend
+npm run dev:web                # Vite dev server on port 5173
+```
+
+**Web server environment variables** (create `apps/web-server/.env`):
+```bash
+PORT=3001                      # Web server port
+STATIC_DIR=../frontend/dist-web  # Path to built frontend
+```
+
+See `MIGRATION_SUCCESS_SUMMARY.md` and `apps/web-server/README.md` for detailed web deployment guide.
+
+### CLI (Backend Only)
+
 **As a standalone CLI tool**:
 ```bash
 cd apps/backend
 python run.py --spec 001
 ```
 
-**With the Electron frontend**:
-```bash
-npm start        # Build and run desktop app
-npm run dev      # Run in development mode (includes --remote-debugging-port=9222 for E2E testing)
-```
+### E2E Testing with QA Agents
 
-**For E2E Testing with QA Agents:**
-1. Start the Electron app: `npm run dev`
+**For Electron app:**
+1. Start the Electron app: `npm run dev:mcp`
 2. Enable Electron MCP in `apps/backend/.env`: `ELECTRON_MCP_ENABLED=true`
 3. Run QA: `python run.py --spec 001 --qa`
 4. QA agents will automatically interact with the running app for testing
